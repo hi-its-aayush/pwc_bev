@@ -189,17 +189,71 @@
     .form-row, .form-row-3 { grid-template-columns: 1fr; }
     .page { padding: 16px; }
   }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+  }
+  #login-screen.hidden { display: none; }
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+  .login-card .brand { text-align: center; margin-bottom: 32px; }
+  .login-card .brand .icon { font-size: 40px; margin-bottom: 10px; }
+  .login-card .brand h1 { font-size: 20px; font-weight: 800; color: var(--white); }
+  .login-card .brand p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .login-card .form-group { margin-bottom: 16px; }
+  .login-card label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .login-card input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 11px 14px; font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.15s; }
+  .login-card input:focus { border-color: var(--accent); }
+  .login-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; transition: background 0.15s; }
+  .login-btn:hover { background: #c73652; }
+  .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .login-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+  .login-error.show { display: block; }
+  #logout-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
+  #logout-btn:hover { color: var(--accent); background: rgba(233,69,96,0.08); }
 </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="brand">
+      <div class="icon">🍷</div>
+      <h1>Beverage Portal</h1>
+      <p>PwC Sydney — Sign in to continue</p>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@pwc.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:20px">
+      Access restricted to PwC Sydney beverage team
+    </p>
+  </div>
+</div>
+
 <button id="hamburger">☰</button>
 <div id="sidebar-overlay"></div>
 <aside id="sidebar">
-  <div class="logo">
-    <h1>🍷 Beverage Portal</h1>
-    <p>PwC Sydney</p>
+  <div class="logo" style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h1>🍷 Beverage Portal</h1>
+      <p>PwC Sydney</p>
+    </div>
+    <button id="logout-btn" onclick="doLogout()" title="Sign out">↩</button>
   </div>
   <nav>
     <a href="#" class="nav-link active" data-page="dashboard">
@@ -854,15 +908,61 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 
 // ── INIT & SEED ─────────────────────────────────────────────
+// ── AUTH ─────────────────────────────────────────────────────
 async function init() {
-  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-    showConfigPrompt();
-    return;
-  }
-  await ensureSeeded();
-  loadSettings();
-  loadDashboard();
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { showApp(); }
+  else { showLogin(); }
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session) showApp();
+    else showLogin();
+  });
 }
+
+function showLogin() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('hamburger').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('sidebar').style.display = '';
+  document.getElementById('main').style.display = '';
+  if (window.innerWidth <= 800) document.getElementById('hamburger').style.display = 'flex';
+  loadSettingsFromStorage();
+  ensureSeeded().then(() => {
+    loadDashboard();
+    checkAutoMonthlyReport();
+  });
+}
+
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+  if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  errEl.classList.remove('show');
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = 'Incorrect email or password.';
+    errEl.classList.add('show');
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+async function doLogout() {
+  if (!confirm('Sign out?')) return;
+  await sb.auth.signOut();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-password')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('login-email')?.addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-password')?.focus(); });
+});
 
 function showConfigPrompt() {
   const banner = document.createElement('div');
@@ -2058,7 +2158,35 @@ function openPrintWindow(title, htmlBody) {
       .summary-box { background: #f0f3f4; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
       .summary-item { font-size: 12px; } .summary-item strong { display: block; font-size: 16px; }
       @media print { body { margin: 10px 16px; } }
-    </style>
+    
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+  }
+  #login-screen.hidden { display: none; }
+  .login-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+  .login-card .brand { text-align: center; margin-bottom: 32px; }
+  .login-card .brand .icon { font-size: 40px; margin-bottom: 10px; }
+  .login-card .brand h1 { font-size: 20px; font-weight: 800; color: var(--white); }
+  .login-card .brand p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .login-card .form-group { margin-bottom: 16px; }
+  .login-card label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .login-card input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 11px 14px; font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.15s; }
+  .login-card input:focus { border-color: var(--accent); }
+  .login-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; transition: background 0.15s; }
+  .login-btn:hover { background: #c73652; }
+  .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .login-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+  .login-error.show { display: block; }
+  #logout-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
+  #logout-btn:hover { color: var(--accent); background: rgba(233,69,96,0.08); }
+</style>
   </head><body>
     <div class="header">
       <div><div class="logo">🍷 PwC Sydney — Beverage Portal</div><div style="font-size:13px;margin-top:2px">${title}</div></div>
