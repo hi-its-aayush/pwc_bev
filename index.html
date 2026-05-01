@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -17,167 +18,181 @@
   }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 14px; }
 
-  /* SIDEBAR */
-  #sidebar { width: var(--sidebar); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
-  #sidebar .logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
-  #sidebar .logo h1 { font-size: 15px; font-weight: 700; color: var(--white); letter-spacing: 0.5px; }
-  #sidebar .logo p { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  #sidebar nav { flex: 1; padding: 16px 0; overflow-y: auto; }
-  #sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 11px 20px; color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500; border-left: 3px solid transparent; transition: all 0.15s; }
-  #sidebar nav a:hover { color: var(--text); background: var(--surface2); }
-  #sidebar nav a.active { color: var(--white); background: var(--surface2); border-left-color: var(--accent); }
-  #sidebar nav a .icon { font-size: 16px; width: 20px; text-align: center; }
-  #sidebar .user-bar { padding: 16px 20px; border-top: 1px solid var(--border); }
-  #sidebar .user-bar select { width: 100%; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+/* SIDEBAR */
+#sidebar { width: var(–sidebar); background: var(–surface); border-right: 1px solid var(–border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+#sidebar .logo { padding: 24px 20px 20px; border-bottom: 1px solid var(–border); }
+#sidebar .logo h1 { font-size: 15px; font-weight: 700; color: var(–white); letter-spacing: 0.5px; }
+#sidebar .logo p { font-size: 11px; color: var(–muted); margin-top: 3px; }
+#sidebar nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+#sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 11px 20px; color: var(–muted); text-decoration: none; font-size: 13px; font-weight: 500; border-left: 3px solid transparent; transition: all 0.15s; }
+#sidebar nav a:hover { color: var(–text); background: var(–surface2); }
+#sidebar nav a.active { color: var(–white); background: var(–surface2); border-left-color: var(–accent); }
+#sidebar nav a .icon { font-size: 16px; width: 20px; text-align: center; }
+#sidebar .user-bar { padding: 16px 20px; border-top: 1px solid var(–border); }
+#sidebar .user-bar select { width: 100%; background: var(–surface2); color: var(–text); border: 1px solid var(–border); border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
 
-  /* MAIN */
-  #main { margin-left: var(--sidebar); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-  .topbar h2 { font-size: 16px; font-weight: 600; }
-  .topbar .actions { display: flex; gap: 10px; }
-  .page { padding: 24px 28px; display: none; }
-  .page.active { display: block; }
+/* MAIN */
+#main { margin-left: var(–sidebar); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(–surface); border-bottom: 1px solid var(–border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar h2 { font-size: 16px; font-weight: 600; }
+.topbar .actions { display: flex; gap: 10px; }
+.page { padding: 24px 28px; display: none; }
+.page.active { display: block; }
 
-  /* BUTTONS */
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #c73652; }
-  .btn-success { background: var(--green); color: #fff; }
-  .btn-success:hover { background: #219a52; }
-  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-outline:hover { background: var(--surface2); }
-  .btn-sm { padding: 5px 10px; font-size: 12px; }
-  .btn-danger { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-  .btn-danger:hover { background: rgba(233,69,96,0.1); }
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; }
+.btn-primary { background: var(–accent); color: #fff; }
+.btn-primary:hover { background: #c73652; }
+.btn-success { background: var(–green); color: #fff; }
+.btn-success:hover { background: #219a52; }
+.btn-outline { background: transparent; color: var(–text); border: 1px solid var(–border); }
+.btn-outline:hover { background: var(–surface2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: transparent; color: var(–accent); border: 1px solid var(–accent); }
+.btn-danger:hover { background: rgba(233,69,96,0.1); }
 
-  /* METRIC CARDS */
-  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
-  .metric .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 8px; }
-  .metric .value { font-size: 26px; font-weight: 700; color: var(--white); }
-  .metric .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .metric.accent { border-left: 3px solid var(--accent); }
-  .metric.green { border-left: 3px solid var(--green); }
-  .metric.amber { border-left: 3px solid var(--accent2); }
-  .metric.blue { border-left: 3px solid var(--blue); }
+/* METRIC CARDS */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.metric { background: var(–surface); border: 1px solid var(–border); border-radius: var(–radius); padding: 18px 20px; }
+.metric .label { font-size: 11px; color: var(–muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 8px; }
+.metric .value { font-size: 26px; font-weight: 700; color: var(–white); }
+.metric .sub { font-size: 11px; color: var(–muted); margin-top: 4px; }
+.metric.accent { border-left: 3px solid var(–accent); }
+.metric.green { border-left: 3px solid var(–green); }
+.metric.amber { border-left: 3px solid var(–accent2); }
+.metric.blue { border-left: 3px solid var(–blue); }
 
-  /* GRID LAYOUT */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+/* GRID LAYOUT */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
 
-  /* CARDS */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .card-header h3 { font-size: 13px; font-weight: 600; color: var(--white); }
-  .card-body { padding: 16px 18px; }
+/* CARDS */
+.card { background: var(–surface); border: 1px solid var(–border); border-radius: var(–radius); overflow: hidden; }
+.card-header { padding: 14px 18px; border-bottom: 1px solid var(–border); display: flex; align-items: center; justify-content: space-between; }
+.card-header h3 { font-size: 13px; font-weight: 600; color: var(–white); }
+.card-body { padding: 16px 18px; }
 
-  /* TABLES */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; position: sticky; top: 0; }
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-  tbody tr:hover { background: var(--surface2); }
-  tbody tr:last-child { border-bottom: none; }
-  tbody td { padding: 10px 14px; color: var(--text); }
-  .td-name { font-weight: 500; color: var(--white); max-width: 260px; }
-  .td-num { font-family: 'Courier New', monospace; text-align: right; }
-  .td-center { text-align: center; }
+/* TABLES */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(–surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(–muted); text-transform: uppercase; letter-spacing: 0.6px; position: sticky; top: 0; }
+tbody tr { border-bottom: 1px solid var(–border); transition: background 0.1s; }
+tbody tr:hover { background: var(–surface2); }
+tbody tr:last-child { border-bottom: none; }
+tbody td { padding: 10px 14px; color: var(–text); }
+.td-name { font-weight: 500; color: var(–white); max-width: 260px; }
+.td-num { font-family: ‘Courier New’, monospace; text-align: right; }
+.td-center { text-align: center; }
 
-  /* BADGES */
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-  .badge-ok { background: rgba(39,174,96,0.15); color: #27ae60; }
-  .badge-low { background: rgba(243,156,18,0.15); color: #f39c12; }
-  .badge-out { background: rgba(233,69,96,0.15); color: #e94560; }
-  .badge-comp { background: rgba(41,128,185,0.15); color: #2980b9; }
-  .badge-cat { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+/* BADGES */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: rgba(39,174,96,0.15); color: #27ae60; }
+.badge-low { background: rgba(243,156,18,0.15); color: #f39c12; }
+.badge-out { background: rgba(233,69,96,0.15); color: #e94560; }
+.badge-comp { background: rgba(41,128,185,0.15); color: #2980b9; }
+.badge-cat { background: var(–surface2); color: var(–muted); border: 1px solid var(–border); }
 
-  /* SEARCH & FILTER BAR */
-  .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-  .filter-bar input, .filter-bar select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 8px 12px; font-size: 13px; outline: none; }
-  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
-  .filter-bar input { flex: 1; min-width: 200px; }
+/* SEARCH & FILTER BAR */
+.filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar input, .filter-bar select { background: var(–surface); border: 1px solid var(–border); color: var(–text); border-radius: 7px; padding: 8px 12px; font-size: 13px; outline: none; }
+.filter-bar input:focus, .filter-bar select:focus { border-color: var(–accent); }
+.filter-bar input { flex: 1; min-width: 200px; }
 
-  /* FORMS */
-  .form-group { margin-bottom: 16px; }
-  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 9px 12px; font-size: 13px; outline: none; font-family: inherit; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+/* FORMS */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(–muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; background: var(–surface2); border: 1px solid var(–border); color: var(–text); border-radius: 7px; padding: 9px 12px; font-size: 13px; outline: none; font-family: inherit; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(–accent); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
-  /* MODAL */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; }
-  .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); z-index: 10; }
-  .modal-header h3 { font-size: 15px; font-weight: 700; }
-  .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; }
-  .modal-close:hover { color: var(--text); }
-  .modal-body { padding: 20px 22px; }
-  .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(–surface); border: 1px solid var(–border); border-radius: 12px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 18px 22px; border-bottom: 1px solid var(–border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(–surface); z-index: 10; }
+.modal-header h3 { font-size: 15px; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(–muted); font-size: 20px; cursor: pointer; line-height: 1; }
+.modal-close:hover { color: var(–text); }
+.modal-body { padding: 20px 22px; }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(–border); display: flex; gap: 10px; justify-content: flex-end; }
 
-  /* ORDER ITEMS TABLE */
-  .order-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  .order-table th { background: var(--surface2); padding: 8px 10px; text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase; }
-  .order-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .order-table input[type=number] { width: 70px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 5px 8px; font-size: 13px; text-align: center; }
-  .order-table input[type=number]:focus { border-color: var(--accent); outline: none; }
-  .qty-cell { background: rgba(243,156,18,0.06); }
-  .comp-row td { color: var(--blue); }
+/* ORDER ITEMS TABLE */
+.order-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.order-table th { background: var(–surface2); padding: 8px 10px; text-align: left; font-size: 11px; color: var(–muted); text-transform: uppercase; }
+.order-table td { padding: 7px 10px; border-bottom: 1px solid var(–border); font-size: 13px; }
+.order-table input[type=number] { width: 70px; background: var(–surface); border: 1px solid var(–border); color: var(–text); border-radius: 5px; padding: 5px 8px; font-size: 13px; text-align: center; }
+.order-table input[type=number]:focus { border-color: var(–accent); outline: none; }
+.qty-cell { background: rgba(243,156,18,0.06); }
+.comp-row td { color: var(–blue); }
 
-  /* TOAST */
-  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 999; display: none; animation: slideIn 0.3s ease; }
-  #toast.error { background: var(--accent); }
-  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* TOAST */
+#toast { position: fixed; bottom: 24px; right: 24px; background: var(–green); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 999; display: none; animation: slideIn 0.3s ease; }
+#toast.error { background: var(–accent); }
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-  /* EMPTY STATE */
-  .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
-  .empty .icon { font-size: 40px; margin-bottom: 12px; }
-  .empty p { font-size: 14px; }
+/* EMPTY STATE */
+.empty { text-align: center; padding: 48px 20px; color: var(–muted); }
+.empty .icon { font-size: 40px; margin-bottom: 12px; }
+.empty p { font-size: 14px; }
 
-  /* LOADING */
-  .loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(--muted); gap: 10px; }
-  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* LOADING */
+.loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(–muted); gap: 10px; }
+.spinner { width: 20px; height: 20px; border: 2px solid var(–border); border-top-color: var(–accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  /* CHART */
-  .chart-container { position: relative; height: 200px; }
+/* CHART */
+.chart-container { position: relative; height: 200px; }
 
-  /* HISTORY */
-  .history-item { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-  .history-item:last-child { border-bottom: none; }
-  .history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-  .history-dot.order { background: var(--green); }
-  .history-dot.event { background: var(--accent); }
-  .history-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+/* HISTORY */
+.history-item { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(–border); }
+.history-item:last-child { border-bottom: none; }
+.history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.history-dot.order { background: var(–green); }
+.history-dot.event { background: var(–accent); }
+.history-meta { font-size: 11px; color: var(–muted); margin-top: 3px; }
 
-  /* TABS */
-  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: 8px; padding: 3px; margin-bottom: 20px; width: fit-content; }
-  .tab-btn { padding: 6px 16px; border-radius: 6px; background: none; border: none; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; }
-  .tab-btn.active { background: var(--surface); color: var(--white); }
+/* TABS */
+.tabs { display: flex; gap: 2px; background: var(–surface2); border-radius: 8px; padding: 3px; margin-bottom: 20px; width: fit-content; }
+.tab-btn { padding: 6px 16px; border-radius: 6px; background: none; border: none; color: var(–muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+.tab-btn.active { background: var(–surface); color: var(–white); }
 
-  /* CONFIG BANNER */
-  #config-banner { background: linear-gradient(135deg, #2d1b4e, #1a1d2e); border: 1px solid #6c3483; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px; }
-  #config-banner h3 { color: #d7bde2; font-size: 14px; margin-bottom: 10px; }
-  #config-banner .config-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
-  #config-banner input { background: rgba(255,255,255,0.08); border: 1px solid #6c3483; color: #fff; border-radius: 7px; padding: 8px 12px; font-size: 12px; font-family: 'Courier New', monospace; }
-  #config-banner input::placeholder { color: rgba(255,255,255,0.3); }
+/* CONFIG BANNER */
+#config-banner { background: linear-gradient(135deg, #2d1b4e, #1a1d2e); border: 1px solid #6c3483; border-radius: var(–radius); padding: 20px 24px; margin-bottom: 20px; }
+#config-banner h3 { color: #d7bde2; font-size: 14px; margin-bottom: 10px; }
+#config-banner .config-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+#config-banner input { background: rgba(255,255,255,0.08); border: 1px solid #6c3483; color: #fff; border-radius: 7px; padding: 8px 12px; font-size: 12px; font-family: ‘Courier New’, monospace; }
+#config-banner input::placeholder { color: rgba(255,255,255,0.3); }
 
-  .section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 12px; }
+.section-title { font-size: 12px; font-weight: 700; color: var(–muted); text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 12px; }
 
-  @media (max-width: 768px) {
-    #sidebar { width: 60px; }
-    #sidebar .logo p, #sidebar nav a span, #sidebar .user-bar { display: none; }
-    #sidebar nav a { justify-content: center; padding: 14px; }
-    #main { margin-left: 60px; }
-    .grid-2, .grid-3 { grid-template-columns: 1fr; }
-    .form-row, .form-row-3 { grid-template-columns: 1fr; }
-  }
+/* HAMBURGER BUTTON */
+#hamburger { display: none; position: fixed; top: 12px; left: 12px; z-index: 300;
+background: var(–surface); border: 1px solid var(–border); border-radius: 8px;
+padding: 8px 10px; cursor: pointer; font-size: 18px; line-height: 1; color: var(–text); }
+#sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 98; }
+
+@media (max-width: 768px) {
+#hamburger { display: block; }
+#sidebar { transform: translateX(-100%); transition: transform 0.25s ease; z-index: 99; width: 240px; }
+#sidebar.mobile-open { transform: translateX(0); }
+#sidebar-overlay.mobile-open { display: block; }
+#main { margin-left: 0; }
+.topbar { padding-left: 56px; }
+.grid-3 { grid-template-columns: 1fr; }
+.form-row, .form-row-3 { grid-template-columns: 1fr; }
+.page { padding: 16px; }
+}
 </style>
+
 </head>
 <body>
 
 <!-- SIDEBAR -->
+
+<button id="hamburger" onclick="toggleSidebar()">☰</button>
+
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 <aside id="sidebar">
   <div class="logo">
     <h1>🍷 Beverage Portal</h1>
@@ -211,6 +226,7 @@
 </aside>
 
 <!-- MAIN -->
+
 <main id="main">
   <div class="topbar">
     <h2 id="page-title">Dashboard</h2>
@@ -218,6 +234,7 @@
   </div>
 
   <!-- DASHBOARD -->
+
   <section class="page active" id="page-dashboard">
     <div class="metrics" id="dash-metrics">
       <div class="metric accent"><div class="label">Portfolio Value (SOH)</div><div class="value" id="m-value">—</div><div class="sub">Total stock on hand</div></div>
@@ -226,28 +243,32 @@
       <div class="metric"><div class="label" style="color:#e94560">Out of Stock</div><div class="value" id="m-out" style="color:#e94560">—</div><div class="sub">SOH = 0</div></div>
     </div>
 
-    <div class="grid-3">
-      <div class="card">
-        <div class="card-header"><h3>Stock Value by Category</h3></div>
-        <div class="card-body"><div class="chart-container"><canvas id="chart-cat"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>⚠️ Low / Out of Stock</h3></div>
-        <div class="card-body" id="dash-alerts" style="max-height:220px;overflow-y:auto;padding:0">
-          <div class="loading"><div class="spinner"></div></div>
-        </div>
-      </div>
+```
+<div class="grid-3">
+  <div class="card">
+    <div class="card-header"><h3>Stock Value by Category</h3></div>
+    <div class="card-body"><div class="chart-container"><canvas id="chart-cat"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>⚠️ Low / Out of Stock</h3></div>
+    <div class="card-body" id="dash-alerts" style="max-height:220px;overflow-y:auto;padding:0">
+      <div class="loading"><div class="spinner"></div></div>
     </div>
+  </div>
+</div>
 
-    <div class="card">
-      <div class="card-header"><h3>Recent Activity</h3></div>
-      <div class="card-body" id="dash-activity" style="max-height:300px;overflow-y:auto">
-        <div class="loading"><div class="spinner"></div></div>
-      </div>
-    </div>
+<div class="card">
+  <div class="card-header"><h3>Recent Activity</h3></div>
+  <div class="card-body" id="dash-activity" style="max-height:300px;overflow-y:auto">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+```
+
   </section>
 
   <!-- INVENTORY -->
+
   <section class="page" id="page-inventory">
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
       <input id="inv-search" type="text" placeholder="🔍  Search items…"
@@ -265,6 +286,7 @@
   </section>
 
   <!-- ORDERS -->
+
   <section class="page" id="page-orders">
     <div class="card" style="margin-bottom:20px">
       <div class="card-header"><h3>Order Details</h3></div>
@@ -281,15 +303,19 @@
       </div>
     </div>
 
-    <div id="order-sections" style="margin-top:0"></div>
+```
+<div id="order-sections" style="margin-top:0"></div>
 
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">
-      <span id="ord-total-label" style="font-size:13px;color:var(--muted)">Est. order total: $0.00</span>
-      <button class="btn btn-success" id="submit-order-btn">📋 Preview Emails & Submit</button>
-    </div>
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">
+  <span id="ord-total-label" style="font-size:13px;color:var(--muted)">Est. order total: $0.00</span>
+  <button class="btn btn-success" id="submit-order-btn">📋 Preview Emails & Submit</button>
+</div>
+```
+
   </section>
 
   <!-- CONSUMPTION -->
+
   <section class="page" id="page-consumption">
     <div class="card" style="margin-bottom:20px">
       <div class="card-header"><h3>Event Details</h3></div>
@@ -312,54 +338,62 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3>Log Consumption</h3>
-        <button class="btn btn-primary" id="submit-consumption-btn">✅ Submit Consumption</button>
-      </div>
-      <div class="table-wrap">
-        <table class="order-table">
-          <thead><tr>
-            <th>Item</th><th>Category</th><th>Tier</th>
-            <th>Current SOH</th><th>Complimentary?</th><th class="qty-cell">QTY Consumed</th>
-          </tr></thead>
-          <tbody id="con-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
+```
+<div class="card">
+  <div class="card-header">
+    <h3>Log Consumption</h3>
+    <button class="btn btn-primary" id="submit-consumption-btn">✅ Submit Consumption</button>
+  </div>
+  <div class="table-wrap">
+    <table class="order-table">
+      <thead><tr>
+        <th>Item</th><th>Category</th><th>Tier</th>
+        <th>Current SOH</th><th>Complimentary?</th><th class="qty-cell">QTY Consumed</th>
+      </tr></thead>
+      <tbody id="con-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+```
+
   </section>
 
   <!-- HISTORY -->
+
   <section class="page" id="page-history">
     <div class="tabs">
       <button class="tab-btn active" data-tab="orders-hist">Orders</button>
       <button class="tab-btn" data-tab="events-hist">Consumption Events</button>
     </div>
 
-    <div id="orders-hist">
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Ordered By</th><th>Items</th><th>Est. Value</th><th>Notes</th><th></th></tr></thead>
-            <tbody id="hist-orders-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
+```
+<div id="orders-hist">
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Ordered By</th><th>Items</th><th>Est. Value</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="hist-orders-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+      </table>
     </div>
+  </div>
+</div>
 
-    <div id="events-hist" style="display:none">
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Recorded By</th><th>Items Logged</th><th></th></tr></thead>
-            <tbody id="hist-events-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
+<div id="events-hist" style="display:none">
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Recorded By</th><th>Items Logged</th><th></th></tr></thead>
+        <tbody id="hist-events-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+      </table>
     </div>
+  </div>
+</div>
+```
+
   </section>
 
   <!-- SETTINGS -->
+
   <section class="page" id="page-settings">
     <div class="card" style="margin-bottom:20px">
       <div class="card-header"><h3>Team Members</h3></div>
@@ -373,27 +407,31 @@
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header"><h3>Supplier Email Addresses</h3></div>
-      <div class="card-body">
-        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">These are used to pre-fill the To field when you submit an order. Update them once and they're saved.</p>
-        <div id="supplier-email-list"></div>
-      </div>
-    </div>
+```
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header"><h3>Supplier Email Addresses</h3></div>
+  <div class="card-body">
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">These are used to pre-fill the To field when you submit an order. Update them once and they're saved.</p>
+    <div id="supplier-email-list"></div>
+  </div>
+</div>
 
-    <div class="card">
-      <div class="card-header"><h3>Monthly Opening Stock Reset</h3></div>
-      <div class="card-body">
-        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">At the start of each month, after your physical count, click this button to set the current SOH as the new opening stock and zero out the orders/consumed counters.</p>
-        <button class="btn btn-outline" id="reset-month-btn">🔄 Reset Opening Stock to Current SOH</button>
-        <p style="color:var(--muted);font-size:11px;margin-top:10px">This action cannot be undone. History records are preserved.</p>
-      </div>
-    </div>
+<div class="card">
+  <div class="card-header"><h3>Monthly Opening Stock Reset</h3></div>
+  <div class="card-body">
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">At the start of each month, after your physical count, click this button to set the current SOH as the new opening stock and zero out the orders/consumed counters.</p>
+    <button class="btn btn-outline" id="reset-month-btn">🔄 Reset Opening Stock to Current SOH</button>
+    <p style="color:var(--muted);font-size:11px;margin-top:10px">This action cannot be undone. History records are preserved.</p>
+  </div>
+</div>
+```
+
   </section>
 
 </main>
 
 <!-- EMAIL PREVIEW MODAL -->
+
 <div class="modal-overlay" id="modal-email">
   <div class="modal" style="max-width:720px">
     <div class="modal-header">
@@ -414,6 +452,7 @@
 </div>
 
 <!-- ITEM EDIT MODAL -->
+
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
     <div class="modal-header">
@@ -439,6 +478,7 @@
 </div>
 
 <!-- ORDER DETAIL MODAL -->
+
 <div class="modal-overlay" id="modal-order-detail">
   <div class="modal">
     <div class="modal-header">
@@ -450,6 +490,7 @@
 </div>
 
 <!-- EVENT DETAIL MODAL -->
+
 <div class="modal-overlay" id="modal-event-detail">
   <div class="modal">
     <div class="modal-header">
@@ -466,8 +507,8 @@
 // ═══════════════════════════════════════════════════════════
 // CONFIG — Replace with your Supabase credentials
 // ═══════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL  = 'https://eznyiwromgvasgrragjm.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_s8hEE_D8jPqCS62f08uYTw_2kBY5-r0';
 // ═══════════════════════════════════════════════════════════
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1365,25 +1406,7 @@ function removeMember(name) {
   renderMemberList();
 }
 
-function renderSupplierEmails() {
-  const suppliers = [...new Set(items.map(i=>i.supplier).filter(s=>s&&s!=='PwC Stock'&&s!=='Old Stock'))].sort();
-  if (!settings.supplierEmails) settings.supplierEmails = {};
 
-  $('supplier-email-list').innerHTML = suppliers.map(sup => `
-    <div style="display:grid;grid-template-columns:180px 1fr;gap:10px;align-items:center;margin-bottom:10px">
-      <div style="font-size:13px;font-weight:500">${sup}</div>
-      <input type="email" placeholder="email@supplier.com.au"
-        value="${settings.supplierEmails[sup]||''}"
-        onchange="updateSupplierEmail('${sup}', this.value)"
-        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:13px">
-    </div>`).join('');
-}
-
-function updateSupplierEmail(sup, email) {
-  if (!settings.supplierEmails) settings.supplierEmails = {};
-  settings.supplierEmails[sup] = email;
-  saveSettings();
-}
 
 $('reset-month-btn').addEventListener('click', async () => {
   if (!confirm('This will set the current SOH as the new opening stock for all items and zero out orders/consumed counters. Continue?')) return;
@@ -1398,5 +1421,6 @@ $('reset-month-btn').addEventListener('click', async () => {
 // ── START ────────────────────────────────────────────────────
 init();
 </script>
+
 </body>
 </html>
