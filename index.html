@@ -377,11 +377,9 @@
             <div class="form-group">
               <label>Package Type</label>
               <select id="evt-type">
-                <option>Event</option>
-                <option>Boardroom Meeting</option>
-                <option>Cocktail Function</option>
-                <option>Sit Down Dinner</option>
-                <option>Both</option>
+                <option>Luxe</option>
+                <option>Client</option>
+                <option>Staff</option>
               </select>
             </div>
             <div class="form-group">
@@ -1182,11 +1180,12 @@ function renderSupplierCards() {
     },
   ];
 
-  $('supplier-cards').innerHTML = cardData.map(sup => {
+  window._supCardData = cardData;
+  $('supplier-cards').innerHTML = cardData.map((sup, _sidx) => {
     const supItems = items.filter(i => (i._supplier||getSupplierName(i.name)) === sup.key);
     const inStock = supItems.filter(i => soh(i) > 0).length;
     const outCount = supItems.filter(i => soh(i) <= 0).length;
-    return `<div onclick="selectSupplier('${sup.key}')"
+    return `<div onclick="selectSupplier(window._supCardData[${_sidx}].key)"
       style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
              overflow:hidden;cursor:pointer;transition:all 0.15s;user-select:none"
       onmouseover="this.style.borderColor='${sup.color}';this.style.transform='translateY(-2px)'"
@@ -1334,7 +1333,17 @@ $('submit-order-btn').addEventListener('click', () => {
 });
 
 // ── CONSUMPTION ──────────────────────────────────────────────
-const CON_CATS = [('🍾 Champagne & Sparkling', ['Champagne', 'Sparkling']), ('🥂 White Wine', ['White']), ('🌹 Rosé', ['Rose']), ('🍷 Red Wine', ['Red']), ('🍸 Non-Alc', ['Non-Alc Wine', 'Non-Alc Cocktail', 'Dessert Wine']), ('🍺 Beer', ['Beer']), ('🥤 Soft Drinks', ['Soft Drink', 'Water']), ('🧃 Juices', ['Juice']), ('🥃 Spirits & Mixers', ['Spirit', 'Mixer'])];
+const CON_CATS = [
+  ['🍾 Champagne & Sparkling', ['Champagne','Sparkling']],
+  ['🥂 White Wine', ['White']],
+  ['🌹 Rosé', ['Rose']],
+  ['🍷 Red Wine', ['Red']],
+  ['🍸 Non-Alc', ['Non-Alc Wine','Non-Alc Cocktail','Dessert Wine']],
+  ['🍺 Beer', ['Beer']],
+  ['🥤 Soft Drinks', ['Soft Drink','Water']],
+  ['🧃 Juices', ['Juice']],
+  ['🥃 Spirits & Mixers', ['Spirit','Mixer']],
+];
 let activeConCat = null;
 
 function loadConsumptionForm() {
@@ -1355,8 +1364,8 @@ function backToEventDetails() {
 }
 
 function renderCatShortcuts() {
-  $('con-cat-shortcuts').innerHTML = CON_CATS.map(([label, cats]) =>
-    `<button onclick="jumpToCat('${label.replace(/'/g,"\\'")}')"
+  $('con-cat-shortcuts').innerHTML = CON_CATS.map(([label, cats], jidx) =>
+    `<button onclick="jumpToCatByIdx(${jidx})"
       style="background:var(--surface);border:1px solid var(--border);border-radius:20px;
              padding:6px 14px;color:var(--text);font-size:12px;cursor:pointer;
              font-family:inherit;transition:all 0.15s"
@@ -1404,15 +1413,14 @@ function goToStep2(initialCat) {
 
 function renderConCatTabs(active) {
   activeConCat = active;
-  $('con-cat-tabs').innerHTML = CON_CATS.map(([label, cats]) => {
+  $('con-cat-tabs').innerHTML = CON_CATS.map(([label, cats], cidx) => {
     const isActive = label === active;
-    // Count entries for this cat
     const catItems = items.filter(i => cats.includes(i.category));
     const entered = catItems.filter(i => {
       const el = document.getElementById('qty-con-' + i.id);
       return el && parseFloat(el.value) > 0;
     }).length;
-    return `<button onclick="switchConCat('${label.replace(/'/g,"\\'")}')"
+    return `<button onclick="switchConCatByIdx(${cidx})"
       style="padding:7px 14px;border-radius:20px;border:1.5px solid ${isActive?'var(--accent)':'var(--border)'};
              background:${isActive?'var(--accent)':'var(--surface)'};color:${isActive?'#fff':'var(--muted)'};
              font-size:12px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:inherit;
@@ -1909,6 +1917,12 @@ async function generateMonthlyReport(isAuto) {
   toast('✅ Report saved: ' + label);
   loadReports();
 }
+
+
+function switchConCat(label) { const cat = CON_CATS.find(c=>c[0]===label); if(cat){renderConCatTabs(cat[0]);renderConGroup(cat[0]);} }
+function switchConCatByIdx(idx) { const cat = CON_CATS[parseInt(idx)]; if(cat){renderConCatTabs(cat[0]);renderConGroup(cat[0]);} }
+function jumpToCat(label) { if(!validateEventDetails()) return; const cat = CON_CATS.find(c=>c[0]===label); if(cat) goToStep2(cat[0]); }
+function jumpToCatByIdx(idx) { if(!validateEventDetails()) return; const cat = CON_CATS[parseInt(idx)]; if(cat) goToStep2(cat[0]); }
 
 async function checkAutoMonthlyReport() {
   const now = new Date();
