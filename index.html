@@ -840,7 +840,7 @@ G('rstbtn').addEventListener('click', async function(){
 });
 
 // ── REPORTS ───────────────────────────────────────────────────
-async function loadReports(){
+aasync function loadReports(){
   var el=G('rlist');
   var r=await sb.from('monthly_reports').select('*').order('report_month',{ascending:false});
   if(r.error||!(r.data&&r.data.length)){el.innerHTML='<div class="empty">No reports yet. Click "Generate Now" above.</div>';return;}
