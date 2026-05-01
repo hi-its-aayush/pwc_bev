@@ -260,8 +260,7 @@
   function checkAuth() {
     if (localStorage.getItem(AUTH_KEY) === ENCODED) {
       document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('sidebar').style.display = '';
-      document.getElementById('main').style.display = '';
+      // sidebar and main are shown by main script's initApp
     }
   }
 
@@ -284,11 +283,7 @@
       var enc = btoa(entered);
       if (enc === ENCODED) {
         localStorage.setItem(AUTH_KEY, ENCODED);
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('sidebar').style.display = '';
-        document.getElementById('main').style.display = '';
-        // Trigger main app init if available
-        if (typeof window.initApp === 'function') window.initApp();
+        location.reload();
       } else {
         if (errEl) { errEl.textContent = 'Incorrect password. Please try again.'; errEl.style.display = 'block'; }
         if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
@@ -2474,8 +2469,17 @@ async function exportMonthlyExcel(monthKey) {
 
 // ── UPDATE CONSUMPTION SUBMIT to save new fields ─────────────
 // ── START ────────────────────────────────────────────────────
-// initApp() is called by login script after auth check
-if (localStorage.getItem('pwc_bev_auth') === 'UHdDU3lkbmV5MjAyNiE=') initApp();
+// Run initApp if already authenticated
+(function() {
+  if (localStorage.getItem('pwc_bev_auth') === 'UHdDU3lkbmV5MjAyNiE=') {
+    // Wait for DOM then run
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  }
+})();
 </script>
 </body>
 </html>
