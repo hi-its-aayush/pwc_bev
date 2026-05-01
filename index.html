@@ -260,7 +260,11 @@
   function checkAuth() {
     if (localStorage.getItem(AUTH_KEY) === ENCODED) {
       document.getElementById('login-screen').style.display = 'none';
-      // sidebar and main are shown by main script's initApp
+      document.getElementById('sidebar').style.display = '';
+      document.getElementById('main').style.display = '';
+      if (window.innerWidth <= 800) {
+        document.getElementById('hamburger').style.display = 'flex';
+      }
     }
   }
 
