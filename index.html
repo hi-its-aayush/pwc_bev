@@ -191,11 +191,7 @@
   }
 
   /* ── LOGIN SCREEN ── */
-  #login-screen {
-    position: fixed; inset: 0; background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 9999; padding: 20px;
-  }
+  #login-screen { position: fixed; inset: 0; background: #0f1117; display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
   #login-screen.hidden { display: none; }
   .login-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -245,9 +241,9 @@
   </div>
 </div>
 
-<button id="hamburger">☰</button>
+<button id="hamburger" style="display:none">☰</button>
 <div id="sidebar-overlay"></div>
-<aside id="sidebar">
+<aside id="sidebar" style="display:none">
   <div class="logo" style="display:flex;align-items:center;justify-content:space-between">
     <div>
       <h1>🍷 Beverage Portal</h1>
@@ -284,7 +280,7 @@
 </aside>
 
 <!-- MAIN -->
-<main id="main">
+<main id="main" style="display:none">
   <div class="topbar">
     <h2 id="page-title">Dashboard</h2>
     <div class="actions" id="topbar-actions"></div>
@@ -2160,11 +2156,7 @@ function openPrintWindow(title, htmlBody) {
       @media print { body { margin: 10px 16px; } }
     
   /* ── LOGIN SCREEN ── */
-  #login-screen {
-    position: fixed; inset: 0; background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 9999; padding: 20px;
-  }
+  #login-screen { position: fixed; inset: 0; background: #0f1117; display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 20px; }
   #login-screen.hidden { display: none; }
   .login-card {
     background: var(--surface); border: 1px solid var(--border);
