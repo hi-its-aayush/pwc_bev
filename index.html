@@ -183,6 +183,7 @@ tbody td{padding:10px 14px;color:var(--txt)}
       <select id="istat" onchange="renderInv()" style="background:var(--sur);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
         <option value="">All Status</option><option value="ok">In Stock</option><option value="low">Low Stock</option><option value="out">Out of Stock</option>
       </select>
+      <button class="btn bs bsm" onclick="startStocktake()">📋 Start New Stocktake</button>
       <button class="btn bo bsm" onclick="fetchItems().then(renderInv)">🔄 Refresh</button>
     </div>
     <div id="ibody"><div class="ld"><div class="sp"></div> Loading…</div></div>
@@ -302,6 +303,32 @@ tbody td{padding:10px 14px;color:var(--txt)}
   <div class="mb" id="mebody"></div>
   <div class="mf" id="mefooter"></div>
 </div></div>
+
+
+<!-- STOCKTAKE OVERLAY -->
+<div id="stoverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:600;overflow-y:auto">
+  <div style="max-width:960px;margin:0 auto;padding:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;position:sticky;top:0;background:var(--bg);padding:16px 0;z-index:10;border-bottom:1px solid var(--bdr)">
+      <div>
+        <h2 style="font-size:18px;font-weight:800;color:var(--wht)">📋 New Stocktake</h2>
+        <p style="font-size:12px;color:var(--mut);margin-top:4px">Enter physical counts below. Leave blank to keep current SOH unchanged.</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--mut)" id="stprog"></div>
+        <button class="btn bo" onclick="closeStocktake()">✕ Cancel</button>
+        <button class="btn bs" onclick="saveStocktake()">💾 Save Stocktake</button>
+      </div>
+    </div>
+    <div style="background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.25);border-radius:8px;padding:10px 16px;font-size:12px;color:#f39c12;margin-bottom:20px">
+      📌 Enter the <strong>physical count</strong> you actually counted on the shelf. Items you leave blank will not be changed. When you save, all entered counts become the new SOH.
+    </div>
+    <div id="stbody"></div>
+    <div style="position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--bdr);padding:16px 0;display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+      <button class="btn bo" onclick="closeStocktake()">✕ Cancel</button>
+      <button class="btn bs" onclick="saveStocktake()">💾 Save Stocktake &amp; Update Inventory</button>
+    </div>
+  </div>
+</div>
 
 <!-- EDIT MODAL -->
 <div class="mo" id="medit"><div class="md">
@@ -514,8 +541,8 @@ function renderInv(){
   var sr=(G('isrch')||{value:''}).value.toLowerCase();
   var sf=(G('istat')||{value:''}).value;
   function pass(i){var s=soh(i);if(sr&&!i.name.toLowerCase().includes(sr))return false;if(sf==='ok'&&s<=3)return false;if(sf==='low'&&!(s>0&&s<=3))return false;if(sf==='out'&&s>0)return false;return true;}
-  function row(i){var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';return'<tr style="border-bottom:1px solid var(--bdr)"><td style="padding:10px 16px;font-weight:500">'+i.name+vt+'</td><td style="padding:10px 16px;font-size:12px;color:var(--mut)">'+(i._sup||'—')+'</td><td style="padding:10px 16px;text-align:center;font-weight:700;font-size:16px;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 16px;text-align:center">'+sbadge(i)+'</td><td style="padding:10px 16px;text-align:right"><button class="btn bo bsm" onclick="openEdit('+i.id+')">Edit SOH</button></td></tr>';}
-  function tbl(rows){return'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sur2)"><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;width:50%">Item</th><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Supplier</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">SOH</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
+  function row(i){var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';return'<tr style="border-bottom:1px solid var(--bdr);cursor:pointer" onclick="openEdit('+i.id+')" title="Click to edit SOH"><td style="padding:10px 16px;font-weight:500;color:var(--acc);text-decoration:underline;text-decoration-color:rgba(233,69,96,0.3)">'+i.name+vt+'</td><td style="padding:10px 16px;text-align:center;font-weight:700;font-size:16px;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 16px;text-align:center">'+sbadge(i)+'</td></tr>';}
+  function tbl(rows){return'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sur2)"><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Item <span style="font-size:10px;font-weight:400;color:var(--mut);text-transform:none">(click to edit SOH)</span></th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">SOH</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Status</th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
   var html='',any=false;
   ILAYOUT.forEach(function(sec){
     var sb='';
@@ -856,6 +883,127 @@ function filterCItems(){
     row.style.display=(!q||name.includes(q))?'':'none';
   });
 }
+
+// ── STOCKTAKE ─────────────────────────────────────────────────
+function startStocktake(){
+  G('stoverlay').style.display='block';
+  document.body.style.overflow='hidden';
+  renderStocktake();
+}
+
+function closeStocktake(){
+  G('stoverlay').style.display='none';
+  document.body.style.overflow='';
+}
+
+function renderStocktake(){
+  var LAYOUT=[
+    {s:'LUXE',c:'#9a7a1f',t:'Luxe $65+',g:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Red Wine',c:['Red']}]},
+    {s:'CLIENT',c:'#1a5276',t:'Client $30-65',g:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Rosé',c:['Rose']},{l:'Red Wine',c:['Red']}]},
+    {s:'STAFF',c:'#1e6b40',t:'Staff <$30',g:[{l:'Sparkling',c:['Sparkling']},{l:'White Wine',c:['White']},{l:'Rosé',c:['Rose']},{l:'Red Wine',c:['Red']},{l:'Dessert Wine',c:['Dessert Wine']}]},
+    {s:'NON-ALCOHOLIC',c:'#6c3483',t:'Non-Alc',g:[{l:'Non-Alc Wine',c:['Non-Alc Wine']},{l:'Non-Alc Cocktails',c:['Non-Alc Cocktail']}]},
+    {s:'BEER',c:'#935116',t:null,g:[{l:null,c:['Beer']}]},
+    {s:'SOFT DRINKS',c:'#154360',t:null,g:[{l:'1.25L Bottles',c:['Soft Drink'],f:function(i){return i.name.toLowerCase().includes('1.25');}},{l:'330ml Cans',c:['Soft Drink'],f:function(i){return !i.name.toLowerCase().includes('1.25');}},{l:'Water',c:['Water']}]},
+    {s:'JUICES',c:'#1d6a35',t:null,g:[{l:null,c:['Juice']}]},
+    {s:'SPIRITS & MIXERS',c:'#7b241c',t:null,g:[{l:'Spirits',c:['Spirit']},{l:'Mixers',c:['Mixer']}]}
+  ];
+  var html='';
+  LAYOUT.forEach(function(sec){
+    var sb='';
+    sec.g.forEach(function(grp){
+      var gi=items.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;if(!grp.c.includes(i.category))return false;if(grp.f&&!grp.f(i))return false;return true;});
+      if(!gi.length)return;
+      if(grp.l) sb+='<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--bdr);background:rgba(255,255,255,.015)">— '+grp.l+' —</div>';
+      var rows=gi.map(function(i){
+        var s=Math.max(0,Math.round(soh(i)));
+        var vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';
+        return'<tr style="border-bottom:1px solid var(--bdr)">'+
+          '<td style="padding:10px 16px;font-weight:500;width:55%">'+i.name+vt+'</td>'+
+          '<td style="padding:10px 16px;text-align:center;color:var(--mut);font-size:13px">'+s+'</td>'+
+          '<td style="padding:10px 16px;text-align:center;background:rgba(39,174,96,.04)">'+
+            '<input type="number" id="st'+i.id+'" min="0" step="1" placeholder="—" '+
+            'style="width:80px;background:var(--sur);border:1.5px solid var(--bdr);color:var(--wht);border-radius:6px;padding:7px 10px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" '+
+            'oninput="updateStProg()" '+
+            'onfocus="this.style.borderColor='#27ae60'" onblur="this.style.borderColor='var(--bdr)'">'+
+          '</td>'+
+        '</tr>';
+      }).join('');
+      sb+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
+        '<thead><tr style="background:var(--sur2)">'+
+        '<th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Item</th>'+
+        '<th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Current SOH</th>'+
+        '<th style="padding:9px 16px;text-align:center;font-size:11px;color:#27ae60;font-weight:700;text-transform:uppercase;background:rgba(39,174,96,.06)">Physical Count ✏️</th>'+
+        '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+    });
+    if(!sb)return;
+    html+='<div style="margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'+
+      '<div style="background:'+sec.c+';padding:12px 20px;display:flex;align-items:center;gap:12px">'+
+      '<span style="font-weight:800;font-size:14px;color:#fff;letter-spacing:1.5px">'+sec.s+'</span>'+
+      (sec.t?'<span style="font-size:11px;color:rgba(255,255,255,.65)">'+sec.t+'</span>':'')+
+      '</div>'+sb+'</div>';
+  });
+  G('stbody').innerHTML=html;
+  updateStProg();
+}
+
+function updateStProg(){
+  var entered=items.filter(function(i){var el=document.getElementById('st'+i.id);return el&&el.value!=='';}).length;
+  G('stprog').textContent=entered+' of '+items.length+' items counted';
+}
+
+async function saveStocktake(){
+  var entries=[];
+  items.forEach(function(i){
+    var el=document.getElementById('st'+i.id);
+    if(el&&el.value!==''){
+      var count=parseInt(el.value);
+      if(!isNaN(count)&&count>=0) entries.push({item:i,count:count});
+    }
+  });
+
+  if(!entries.length){toast('No counts entered. Fill in at least one item.',true);return;}
+
+  var confirmed=confirm('Save stocktake? This will update SOH for '+entries.length+' item(s) and record it in history.');
+  if(!confirmed)return;
+
+  var btn=G('stoverlay').querySelector('.btn.bs');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+
+  try{
+    // Update each item — set opening_soh to physical count, zero orders_in and consumed
+    for(var j=0;j<entries.length;j++){
+      var e=entries[j];
+      var r=await sb.from('items').update({opening_soh:e.count,orders_in:0,consumed:0}).eq('id',e.item.id);
+      if(r.error) throw new Error('Failed updating '+e.item.name+': '+r.error.message);
+    }
+
+    // Save stocktake record to monthly_reports
+    var now=new Date();
+    var mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0');
+    var lbl='Stocktake — '+now.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
+    await fetchItems();
+    var snap={
+      type:'stocktake',
+      total_value:items.reduce(function(s,i){return s+Math.max(0,soh(i))*i.luc;},0),
+      item_count:items.length,
+      counted_items:entries.length,
+      in_stock:items.filter(function(i){return soh(i)>0;}).length,
+      out_of_stock:items.filter(function(i){return soh(i)<=0;}).length,
+      order_count:0,event_count:0,
+      items:items.map(function(i){var counted=entries.find(function(e){return e.item.id===i.id;});return{id:i.id,name:i.name,category:i.category,price_tier:i.price_tier,supplier:i._sup||i.supplier,luc:i.luc,opening_soh:i.opening_soh,orders_in:i.orders_in,consumed:i.consumed,current_soh:Math.max(0,soh(i)),soh_value:Math.max(0,soh(i))*i.luc,was_counted:!!counted,physical_count:counted?counted.count:null};})
+    };
+    await sb.from('monthly_reports').insert({report_month:mk,report_label:lbl,is_auto:false,generated_by:G('usel').value||'Team',snapshot:snap});
+
+    closeStocktake();
+    renderInv();
+    toast('✅ Stocktake saved — '+entries.length+' items updated');
+  }catch(ex){
+    toast('Error: '+ex.message,true);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='💾 Save Stocktake & Update Inventory';}
+  }
+}
+
 
 async function autoReport(){
   if(new Date().getDate()===1){
