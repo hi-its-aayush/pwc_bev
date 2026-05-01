@@ -251,6 +251,75 @@
   </div>
 </div>
 
+<script>
+// ── STANDALONE LOGIN — runs independently of main app script ──
+(function() {
+  const AUTH_KEY = 'pwc_bev_auth';
+  const ENCODED  = 'UHdDU3lkbmV5MjAyNiE=';
+
+  function checkAuth() {
+    if (localStorage.getItem(AUTH_KEY) === ENCODED) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('sidebar').style.display = '';
+      document.getElementById('main').style.display = '';
+    }
+  }
+
+  window.doLogin = function() {
+    var passEl = document.getElementById('login-password');
+    var errEl  = document.getElementById('login-error');
+    var btn    = document.getElementById('login-btn');
+    var entered = (passEl ? passEl.value : '').trim();
+
+    if (errEl) errEl.style.display = 'none';
+
+    if (!entered) {
+      if (errEl) { errEl.textContent = 'Please enter the password.'; errEl.style.display = 'block'; }
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+
+    setTimeout(function() {
+      var enc = btoa(entered);
+      if (enc === ENCODED) {
+        localStorage.setItem(AUTH_KEY, ENCODED);
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('sidebar').style.display = '';
+        document.getElementById('main').style.display = '';
+        // Trigger main app init if available
+        if (typeof window.initApp === 'function') window.initApp();
+      } else {
+        if (errEl) { errEl.textContent = 'Incorrect password. Please try again.'; errEl.style.display = 'block'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+        if (passEl) { passEl.value = ''; passEl.focus(); }
+      }
+    }, 300);
+  };
+
+  window.doLogout = function() {
+    if (!confirm('Sign out?')) return;
+    localStorage.removeItem(AUTH_KEY);
+    location.reload();
+  };
+
+  // Check on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      var passEl = document.getElementById('login-password');
+      if (passEl) {
+        passEl.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') window.doLogin();
+        });
+      }
+    });
+  } else {
+    checkAuth();
+  }
+})();
+</script>
+
 <button id="hamburger" style="display:none">☰</button>
 <div id="sidebar-overlay"></div>
 <aside id="sidebar" style="display:none">
@@ -919,7 +988,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 // and replace the value below
 const _AUTH = 'UHdDU3lkbmV5MjAyNiE=';
 
-async function init() {
+async function initApp() {
   const stored = localStorage.getItem('pwc_bev_auth');
   if (stored === _AUTH) {
     showApp();
@@ -2405,7 +2474,8 @@ async function exportMonthlyExcel(monthKey) {
 
 // ── UPDATE CONSUMPTION SUBMIT to save new fields ─────────────
 // ── START ────────────────────────────────────────────────────
-init();
+// initApp() is called by login script after auth check
+if (localStorage.getItem('pwc_bev_auth') === 'UHdDU3lkbmV5MjAyNiE=') initApp();
 </script>
 </body>
 </html>
