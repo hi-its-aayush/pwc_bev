@@ -8,1290 +8,918 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg:#0f1117;--surface:#1a1d2e;--surface2:#222538;
-    --border:#2d3050;--accent:#e94560;--accent2:#f39c12;
-    --green:#27ae60;--blue:#2980b9;--text:#e8eaf0;--muted:#8892a4;--white:#ffffff;
-    --radius:10px;
-  }
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;min-height:100vh;font-size:14px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--sur:#1a1d2e;--sur2:#222538;--bdr:#2d3050;--acc:#e94560;--grn:#27ae60;--amb:#f39c12;--blu:#2980b9;--txt:#e8eaf0;--mut:#8892a4;--wht:#ffffff}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);margin:0;font-size:14px}
 
-  /* LOGIN */
-  #login-screen{position:fixed;inset:0;width:100vw;height:100vh;background:#0f1117;z-index:99999}
-  #login-screen.hidden{display:none!important}
-  .login-card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1d2e;border:1px solid #2d3050;border-radius:16px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.6);box-sizing:border-box}
-  .login-card .brand{text-align:center;margin-bottom:28px}
-  .login-card .brand .icon{font-size:44px;margin-bottom:10px;display:block}
-  .login-card .brand h1{font-size:22px;font-weight:800;color:#fff;margin:0}
-  .login-card .brand p{font-size:13px;color:#8892a4;margin-top:6px}
-  .login-card .form-group{margin-bottom:16px}
-  .login-card label{display:block;font-size:11px;font-weight:700;color:#8892a4;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
-  .login-card input{width:100%;background:#222538;border:1px solid #2d3050;color:#e8eaf0;border-radius:8px;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box}
-  .login-card input:focus{border-color:#e94560}
-  .login-btn{width:100%;background:#e94560;color:#fff;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px}
-  .login-btn:hover:not(:disabled){background:#c73652}
-  .login-btn:disabled{opacity:.6;cursor:not-allowed}
-  .login-error{background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3);color:#e94560;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
-  .login-error.show{display:block}
+/* LOGIN */
+#ls{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+#ls.hide{display:none}
+.lc{background:var(--sur);border:1px solid var(--bdr);border-radius:16px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.lc h1{font-size:22px;font-weight:800;color:var(--wht);text-align:center;margin-bottom:6px}
+.lc p{font-size:13px;color:var(--mut);text-align:center;margin-bottom:28px}
+.lc label{display:block;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.lc input{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);border-radius:8px;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;margin-bottom:16px}
+.lc input:focus{border-color:var(--acc)}
+.lbtn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.lbtn:hover{background:#c73652}
+.lbtn:disabled{opacity:.6;cursor:not-allowed}
+.lerr{background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3);color:var(--acc);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
 
-  /* LAYOUT */
-  #sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;overflow-y:auto}
-  #sidebar .logo{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-  #sidebar .logo h1{font-size:14px;font-weight:700;color:var(--white)}
-  #sidebar .logo p{font-size:11px;color:var(--muted);margin-top:2px}
-  #logout-btn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 8px;border-radius:6px}
-  #logout-btn:hover{color:var(--accent)}
-  #sidebar nav{flex:1;padding:12px 0}
-  #sidebar nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .15s}
-  #sidebar nav a:hover{color:var(--text);background:var(--surface2)}
-  #sidebar nav a.active{color:var(--white);background:var(--surface2);border-left-color:var(--accent)}
-  #sidebar nav a .icon{font-size:16px;width:22px;text-align:center}
-  #sidebar .user-bar{padding:14px 16px;border-top:1px solid var(--border)}
-  #sidebar .user-bar select{width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer}
-  #main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
-  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-  .topbar h2{font-size:16px;font-weight:600}
-  .page{padding:24px;display:none}
-  .page.active{display:block}
+/* LAYOUT */
+#sb{width:220px;background:var(--sur);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;overflow-y:auto}
+#sb .logo{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+#sb .logo h2{font-size:14px;font-weight:700;color:var(--wht)}
+#sb .logo small{font-size:11px;color:var(--mut);display:block;margin-top:2px}
+#outbtn{background:none;border:none;color:var(--mut);font-size:16px;cursor:pointer;padding:4px}
+#outbtn:hover{color:var(--acc)}
+#sb nav{flex:1;padding:12px 0}
+#sb nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--mut);text-decoration:none;font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .15s}
+#sb nav a:hover{color:var(--txt);background:var(--sur2)}
+#sb nav a.active{color:var(--wht);background:var(--sur2);border-left-color:var(--acc)}
+#sb .ubar{padding:14px 16px;border-top:1px solid var(--bdr)}
+#sb .ubar select{width:100%;background:var(--sur2);color:var(--txt);border:1px solid var(--bdr);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer}
+#mn{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar h3{font-size:16px;font-weight:600}
+.pg{padding:24px;display:none}
+.pg.on{display:block}
 
-  /* HAMBURGER */
-  #hamburger{display:none;position:fixed;top:10px;left:10px;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:40px;height:40px;font-size:20px;cursor:pointer;color:var(--text);align-items:center;justify-content:center}
-  #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:199}
-  @media(max-width:800px){
-    #hamburger{display:flex}
-    #sidebar{transform:translateX(-100%);transition:transform .22s ease}
-    #sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.5)}
-    #sidebar-overlay.open{display:block}
-    #main{margin-left:0!important}
-    .topbar{padding-left:60px}
-    .page{padding:16px}
-    .grid-3{grid-template-columns:1fr!important}
-    .form-row,.form-row-3{grid-template-columns:1fr!important}
-    .metrics{grid-template-columns:1fr 1fr!important}
-  }
+/* HAMBURGER */
+#hbg{display:none;position:fixed;top:10px;left:10px;z-index:300;background:var(--sur);border:1px solid var(--bdr);border-radius:8px;width:40px;height:40px;font-size:20px;cursor:pointer;color:var(--txt);align-items:center;justify-content:center}
+#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:199}
+@media(max-width:800px){
+  #hbg{display:flex}
+  #sb{transform:translateX(-100%);transition:transform .22s ease}
+  #sb.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.5)}
+  #ov.open{display:block}
+  #mn{margin-left:0!important}
+  .topbar{padding-left:60px}
+  .pg{padding:16px}
+  .g3{grid-template-columns:1fr!important}
+  .fr,.fr3{grid-template-columns:1fr!important}
+  .mts{grid-template-columns:1fr 1fr!important}
+}
 
-  /* COMPONENTS */
-  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;text-decoration:none}
-  .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#c73652}
-  .btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#219a52}
-  .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-outline:hover{background:var(--surface2)}
-  .btn-sm{padding:5px 10px;font-size:12px}
-  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
-  .metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
-  .metric .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px}
-  .metric .value{font-size:26px;font-weight:700;color:var(--white)}
-  .metric .sub{font-size:11px;color:var(--muted);margin-top:4px}
-  .metric.accent{border-left:3px solid var(--accent)}.metric.green{border-left:3px solid var(--green)}.metric.amber{border-left:3px solid var(--accent2)}
-  .grid-3{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
-  .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-  .card-header h3{font-size:13px;font-weight:600;color:var(--white)}
-  .card-body{padding:16px 18px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-  .badge-ok{background:rgba(39,174,96,.15);color:#27ae60}
-  .badge-low{background:rgba(243,156,18,.15);color:#f39c12}
-  .badge-out{background:rgba(233,69,96,.15);color:#e94560}
-  .badge-cat{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
-  .form-group{margin-bottom:16px}
-  .form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
-  .form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
-  .form-group input:focus,.form-group select:focus{border-color:var(--accent)}
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
-  .modal-overlay.open{display:flex}
-  .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto}
-  .modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:10}
-  .modal-header h3{font-size:15px;font-weight:700}
-  .modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
-  .modal-body{padding:20px 22px}
-  .modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
-  .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--muted);gap:10px}
-  .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px}
-  .chart-container{position:relative;height:200px}
-  .history-item{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
-  .history-item:last-child{border-bottom:none}
-  .history-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
-  .history-dot.order{background:var(--green)}.history-dot.event{background:var(--accent)}
-  .history-meta{font-size:11px;color:var(--muted);margin-top:3px}
-  .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content}
-  .tab-btn{padding:6px 16px;border-radius:6px;background:none;border:none;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer}
-  .tab-btn.active{background:var(--surface);color:var(--white)}
-  .section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
-  #toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;display:none}
-  #toast.error{background:var(--accent)}
-  .table-wrap{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  thead th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-  tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
-  tbody tr:hover{background:var(--surface2)}
-  tbody td{padding:10px 14px;color:var(--text)}
-  .td-num{text-align:right}
+/* COMPONENTS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.bp{background:var(--acc);color:#fff}.bp:hover{background:#c73652}
+.bs{background:var(--grn);color:#fff}.bs:hover{background:#219a52}
+.bo{background:transparent;color:var(--txt);border:1px solid var(--bdr)}.bo:hover{background:var(--sur2)}
+.bsm{padding:5px 10px;font-size:12px}
+.mts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.mt{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:18px 20px}
+.mt .lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px}
+.mt .val{font-size:26px;font-weight:700;color:var(--wht)}
+.mt .sub{font-size:11px;color:var(--mut);margin-top:4px}
+.mt.a{border-left:3px solid var(--acc)}.mt.g{border-left:3px solid var(--grn)}.mt.y{border-left:3px solid var(--amb)}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.ch{padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.ch h4{font-size:13px;font-weight:600;color:var(--wht)}
+.cb{padding:16px 18px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.bok{background:rgba(39,174,96,.15);color:#27ae60}
+.blow{background:rgba(243,156,18,.15);color:#f39c12}
+.bout{background:rgba(233,69,96,.15);color:#e94560}
+.bcat{background:var(--sur2);color:var(--mut);border:1px solid var(--bdr)}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select{width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
+.fg input:focus,.fg select:focus{border-color:var(--acc)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.mo.on{display:flex}
+.md{background:var(--sur);border:1px solid var(--bdr);border-radius:12px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto}
+.mh{padding:18px 22px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--sur);z-index:10}
+.mh h4{font-size:15px;font-weight:700}
+.mc{background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer}
+.mb{padding:20px 22px}
+.mf{padding:14px 22px;border-top:1px solid var(--bdr);display:flex;gap:10px;justify-content:flex-end}
+.ld{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--mut);gap:10px}
+.sp{width:20px;height:20px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px;color:var(--mut);font-size:13px}
+.cc{position:relative;height:200px}
+.hi{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--bdr)}
+.hi:last-child{border-bottom:none}
+.hd{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.hd.ord{background:var(--grn)}.hd.evt{background:var(--acc)}
+.hm{font-size:11px;color:var(--mut);margin-top:2px}
+.tabs{display:flex;gap:2px;background:var(--sur2);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content}
+.tb{padding:6px 16px;border-radius:6px;background:none;border:none;color:var(--mut);font-size:13px;font-weight:500;cursor:pointer}
+.tb.on{background:var(--sur);color:var(--wht)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--sur2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+tbody tr{border-bottom:1px solid var(--bdr)}
+tbody tr:hover{background:var(--sur2)}
+tbody td{padding:10px 14px;color:var(--txt)}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--grn);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;display:none}
+#toast.err{background:var(--acc)}
 </style>
 </head>
 <body>
 
-<div id="login-screen">
-  <div class="login-card">
-    <div class="brand">
-      <span class="icon">🍷</span>
-      <h1>Beverage Portal</h1>
-      <p>PwC Sydney — Sign in to continue</p>
-    </div>
-    <div class="login-error" id="login-error"></div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="login-password" placeholder="Enter team password">
-    </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
-<script>
-// Early standalone login — runs before main script
-(function(){
-  var AUTH='UHdDU3lkbmV5MjAyNiE=';
-  window.doLogin=function(){
-    var p=document.getElementById('login-password');
-    var e=document.getElementById('login-error');
-    var b=document.getElementById('login-btn');
-    var v=(p?p.value:'').trim();
-    if(e)e.style.display='none';
-    if(!v){if(e){e.textContent='Please enter the password.';e.style.display='block';}return;}
-    if(b){b.disabled=true;b.textContent='Checking…';}
-    setTimeout(function(){
-      if(btoa(v)===AUTH){
-        localStorage.setItem('pwc_bev_auth',AUTH);
-        location.reload();
-      } else {
-        if(e){e.textContent='Incorrect password. Try again.';e.style.display='block';}
-        if(b){b.disabled=false;b.textContent='Sign In';}
-        if(p){p.value='';p.focus();}
-      }
-    },300);
-  };
-  window.doLogout=function(){
-    if(!confirm('Sign out?'))return;
-    localStorage.removeItem('pwc_bev_auth');
-    location.reload();
-  };
-  document.addEventListener('DOMContentLoaded',function(){
-    var p=document.getElementById('login-password');
-    if(p)p.addEventListener('keydown',function(e){if(e.key==='Enter')window.doLogin();});
-  });
-})();
-</script>
-
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:18px">Access restricted to PwC Sydney beverage team</p>
+<!-- LOGIN SCREEN -->
+<div id="ls">
+  <div class="lc">
+    <div style="text-align:center;font-size:44px;margin-bottom:10px">🍷</div>
+    <h1>Beverage Portal</h1>
+    <p>PwC Sydney</p>
+    <div class="lerr" id="lerr"></div>
+    <label for="lpw">Password</label>
+    <input type="password" id="lpw" placeholder="Enter team password">
+    <button class="lbtn" id="lbtn">Sign In</button>
+    <p style="text-align:center;font-size:11px;color:var(--mut);margin-top:16px">PwC Sydney beverage team access only</p>
   </div>
 </div>
 
-<button id="hamburger" style="display:none" onclick="toggleSidebar()">☰</button>
-<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<button id="hbg">☰</button>
+<div id="ov"></div>
 
-<aside id="sidebar" style="display:none">
+<aside id="sb" style="display:none">
   <div class="logo">
-    <div>
-      <h1>🍷 Beverage Portal</h1>
-      <p>PwC Sydney</p>
-    </div>
-    <button id="logout-btn" onclick="doLogout()" title="Sign out">↩</button>
+    <div><h2>🍷 Beverage Portal</h2><small>PwC Sydney</small></div>
+    <button id="outbtn" title="Sign out">↩</button>
   </div>
-  <nav>
-    <a href="#" class="nav-link active" data-page="dashboard"><span class="icon">📊</span><span>Dashboard</span></a>
-    <a href="#" class="nav-link" data-page="inventory"><span class="icon">📦</span><span>Inventory</span></a>
-    <a href="#" class="nav-link" data-page="orders"><span class="icon">🛒</span><span>New Order</span></a>
-    <a href="#" class="nav-link" data-page="consumption"><span class="icon">📋</span><span>Consumption</span></a>
-    <a href="#" class="nav-link" data-page="history"><span class="icon">📜</span><span>History</span></a>
-    <a href="#" class="nav-link" data-page="reports"><span class="icon">📅</span><span>Reports</span></a>
-    <a href="#" class="nav-link" data-page="settings"><span class="icon">⚙️</span><span>Settings</span></a>
+  <nav id="nav">
+    <a href="#" data-p="dashboard" class="active">📊 Dashboard</a>
+    <a href="#" data-p="inventory">📦 Inventory</a>
+    <a href="#" data-p="orders">🛒 New Order</a>
+    <a href="#" data-p="consumption">📋 Consumption</a>
+    <a href="#" data-p="history">📜 History</a>
+    <a href="#" data-p="reports">📅 Reports</a>
+    <a href="#" data-p="settings">⚙️ Settings</a>
   </nav>
-  <div class="user-bar">
-    <select id="current-user"><option value="">Select your name</option></select>
-  </div>
+  <div class="ubar"><select id="usel"><option value="">Select your name</option></select></div>
 </aside>
 
-<main id="main" style="display:none">
-  <div class="topbar"><h2 id="page-title">Dashboard</h2><div id="topbar-actions"></div></div>
+<main id="mn" style="display:none">
+  <div class="topbar"><h3 id="ptitle">Dashboard</h3><div id="pact"></div></div>
 
   <!-- DASHBOARD -->
-  <section class="page active" id="page-dashboard">
-    <div class="metrics">
-      <div class="metric accent"><div class="label">Portfolio Value</div><div class="value" id="m-value">—</div><div class="sub">Total SOH</div></div>
-      <div class="metric green"><div class="label">In Stock</div><div class="value" id="m-instock">—</div><div class="sub">SOH &gt; 0</div></div>
-      <div class="metric amber"><div class="label">Low Stock</div><div class="value" id="m-low">—</div><div class="sub">SOH 1–3</div></div>
-      <div class="metric"><div class="label" style="color:#e94560">Out of Stock</div><div class="value" id="m-out" style="color:#e94560">—</div><div class="sub">SOH = 0</div></div>
+  <section class="pg on" id="p-dashboard">
+    <div class="mts">
+      <div class="mt a"><div class="lbl">Portfolio Value</div><div class="val" id="mv">—</div><div class="sub">Total SOH</div></div>
+      <div class="mt g"><div class="lbl">In Stock</div><div class="val" id="mis">—</div><div class="sub">SOH &gt; 0</div></div>
+      <div class="mt y"><div class="lbl">Low Stock</div><div class="val" id="mlo">—</div><div class="sub">SOH 1–3</div></div>
+      <div class="mt"><div class="lbl" style="color:var(--acc)">Out of Stock</div><div class="val" id="mout" style="color:var(--acc)">—</div><div class="sub">SOH = 0</div></div>
     </div>
-    <div class="grid-3">
-      <div class="card"><div class="card-header"><h3>Stock Value by Category</h3></div><div class="card-body"><div class="chart-container"><canvas id="chart-cat"></canvas></div></div></div>
-      <div class="card"><div class="card-header"><h3>⚠️ Low / Out of Stock</h3></div><div id="dash-alerts" style="max-height:220px;overflow-y:auto"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div class="g3">
+      <div class="card"><div class="ch"><h4>Stock by Category</h4></div><div class="cb"><div class="cc"><canvas id="chcat"></canvas></div></div></div>
+      <div class="card"><div class="ch"><h4>⚠️ Low / Out of Stock</h4></div><div id="dalerts" style="max-height:220px;overflow-y:auto"><div class="ld"><div class="sp"></div></div></div></div>
     </div>
-    <div class="card"><div class="card-header"><h3>Recent Activity</h3></div><div class="card-body" id="dash-activity" style="max-height:280px;overflow-y:auto"><div class="loading"><div class="spinner"></div></div></div></div>
+    <div class="card"><div class="ch"><h4>Recent Activity</h4></div><div class="cb" id="dact" style="max-height:280px;overflow-y:auto"><div class="ld"><div class="sp"></div></div></div></div>
   </section>
 
   <!-- INVENTORY -->
-  <section class="page" id="page-inventory">
+  <section class="pg" id="p-inventory">
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-      <input id="inv-search" type="text" placeholder="🔍 Search items…" oninput="renderInventory()"
-        style="flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
-      <select id="inv-filter-status" onchange="renderInventory()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
+      <input id="isrch" type="text" placeholder="🔍 Search…" oninput="renderInv()" style="flex:1;min-width:200px;background:var(--sur);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
+      <select id="istat" onchange="renderInv()" style="background:var(--sur);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
         <option value="">All Status</option><option value="ok">In Stock</option><option value="low">Low Stock</option><option value="out">Out of Stock</option>
       </select>
-      <button class="btn btn-outline btn-sm" onclick="fetchItems().then(renderInventory)">🔄 Refresh</button>
+      <button class="btn bo bsm" onclick="fetchItems().then(renderInv)">🔄 Refresh</button>
     </div>
-    <div id="inv-body"><div class="loading"><div class="spinner"></div> Loading…</div></div>
+    <div id="ibody"><div class="ld"><div class="sp"></div> Loading…</div></div>
   </section>
 
   <!-- ORDERS -->
-  <section class="page" id="page-orders">
-    <div id="ord-step1">
-      <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Select a supplier to begin your order.</p>
-      <div id="supplier-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px"></div>
+  <section class="pg" id="p-orders">
+    <div id="os1">
+      <p style="color:var(--mut);font-size:13px;margin-bottom:20px">Select a supplier to begin your order.</p>
+      <div id="scards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px"></div>
     </div>
-    <div id="ord-step2" style="display:none">
+    <div id="os2" style="display:none">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="showStep1()">← Back</button>
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px">
-          <div id="ord-sup-name" style="font-weight:700;font-size:14px;color:var(--white)"></div>
-          <div id="ord-sup-meta" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+        <button class="btn bo bsm" onclick="showOS1()">← Back</button>
+        <div style="flex:1;background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:10px 16px">
+          <div id="osupn" style="font-weight:700;font-size:14px;color:var(--wht)"></div>
+          <div id="osupm" style="font-size:12px;color:var(--mut);margin-top:2px"></div>
         </div>
-        <span id="ord-total-label" style="font-size:13px;color:var(--muted)">Total: $0.00</span>
-        <button class="btn btn-success" id="submit-order-btn">📋 Preview Email</button>
+        <span id="ototl" style="font-size:13px;color:var(--mut)">Total: $0.00</span>
+        <button class="btn bs" id="subord">📋 Preview Email</button>
       </div>
-      <div class="card" style="margin-bottom:16px"><div class="card-body" style="padding:14px 18px">
-        <div class="form-row-3">
-          <div class="form-group" style="margin:0"><label>Order Date</label><input type="date" id="ord-date"></div>
-          <div class="form-group" style="margin:0"><label>Ordered By</label><input type="text" id="ord-by" placeholder="Your name"></div>
-          <div class="form-group" style="margin:0"><label>Delivery Note</label><input type="text" id="ord-notes" placeholder="e.g. Deliver next Tuesday"></div>
+      <div class="card" style="margin-bottom:16px"><div class="cb" style="padding:14px 18px">
+        <div class="fr3">
+          <div class="fg" style="margin:0"><label>Order Date</label><input type="date" id="odate"></div>
+          <div class="fg" style="margin:0"><label>Ordered By</label><input type="text" id="oby" placeholder="Your name"></div>
+          <div class="fg" style="margin:0"><label>Delivery Note</label><input type="text" id="onotes" placeholder="e.g. Deliver next Tuesday"></div>
         </div>
       </div></div>
       <div style="background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.25);border-radius:8px;padding:10px 16px;font-size:12px;color:#f39c12;margin-bottom:16px">
-        📦 Enter quantities in <strong>cartons</strong>. Wine=12 bottles · Beer=24 cans · Soft drink 330ml=24 · 1.25L=12 · Water 300ml=24
+        📦 Enter <strong>cartons</strong>. Wine=12 bottles · Beer=24 cans · Soft drink 330ml=24 · 1.25L=12 · Water 300ml=24
       </div>
-      <div id="ord-item-groups"></div>
-      <div style="position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;border-radius:0 0 10px 10px">
-        <span id="ord-total-bottom" style="font-size:13px;color:var(--muted)">Estimated total: $0.00</span>
-        <button class="btn btn-success" onclick="document.getElementById('submit-order-btn').click()">📋 Preview Email &amp; Submit</button>
+      <div id="ogrps"></div>
+      <div style="position:sticky;bottom:0;background:var(--sur);border-top:1px solid var(--bdr);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;border-radius:0 0 10px 10px">
+        <span id="ototb" style="font-size:13px;color:var(--mut)">Total: $0.00</span>
+        <button class="btn bs" onclick="document.getElementById('subord').click()">📋 Preview &amp; Submit</button>
       </div>
     </div>
   </section>
 
   <!-- CONSUMPTION -->
-  <section class="page" id="page-consumption">
-    <div id="con-step1">
-      <div class="card"><div class="card-header"><h3>Event Details</h3></div><div class="card-body">
-        <div class="form-row">
-          <div class="form-group"><label>Function Name</label><input type="text" id="evt-name" placeholder="e.g. Client Dinner — Deloitte"></div>
-          <div class="form-group"><label>Booking ID</label><input type="text" id="evt-booking-id" placeholder="e.g. BK-20240514"></div>
-        </div>
-        <div class="form-row-3">
-          <div class="form-group"><label>Date</label><input type="date" id="evt-date"></div>
-          <div class="form-group"><label>Time</label><input type="time" id="evt-time"></div>
-          <div class="form-group"><label>Room</label><input type="text" id="evt-room" placeholder="e.g. Level 34 Boardroom"></div>
-        </div>
-        <div class="form-row-3">
-          <div class="form-group"><label>Pax</label><input type="number" id="evt-pax" placeholder="24" min="1"></div>
-          <div class="form-group"><label>Package Type</label>
-            <select id="evt-type"><option>Luxe</option><option>Client</option><option>Staff</option></select>
-          </div>
-          <div class="form-group"><label>Supervisor</label><input type="text" id="evt-supervisor" placeholder="Supervisor name"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Recorded By</label><input type="text" id="evt-by" placeholder="Your name"></div>
-        </div>
-        <div style="background:rgba(41,128,185,.08);border:1px solid rgba(41,128,185,.25);border-radius:8px;padding:11px 16px;font-size:12px;color:#5dade2;margin-top:4px">
-          💧 Soft drinks, waters, and juices are <strong>complimentary</strong> for all clients.
-        </div>
-        <div style="margin-top:16px;display:flex;justify-content:flex-end">
-          <button class="btn btn-primary" id="con-next-btn">Continue to Consumption →</button>
-        </div>
+  <section class="pg" id="p-consumption">
+    <div id="cs1">
+      <div class="card"><div class="ch"><h4>Event Details</h4></div><div class="cb">
+        <div class="fr"><div class="fg"><label>Function Name</label><input type="text" id="ename" placeholder="e.g. Client Dinner"></div><div class="fg"><label>Booking ID</label><input type="text" id="ebid" placeholder="BK-001"></div></div>
+        <div class="fr3"><div class="fg"><label>Date</label><input type="date" id="edate"></div><div class="fg"><label>Time</label><input type="time" id="etime"></div><div class="fg"><label>Room</label><input type="text" id="eroom" placeholder="Level 34 Boardroom"></div></div>
+        <div class="fr3"><div class="fg"><label>Pax</label><input type="number" id="epax" placeholder="24" min="1"></div><div class="fg"><label>Package Type</label><select id="etype"><option>Luxe</option><option>Client</option><option>Staff</option></select></div><div class="fg"><label>Supervisor</label><input type="text" id="esup" placeholder="Supervisor name"></div></div>
+        <div class="fr"><div class="fg"><label>Recorded By</label><input type="text" id="eby" placeholder="Your name"></div></div>
+        <div style="background:rgba(41,128,185,.08);border:1px solid rgba(41,128,185,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#5dade2">💧 Soft drinks, waters, and juices are <strong>complimentary</strong> for all clients.</div>
+        <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn bp" id="cnext">Continue →</button></div>
       </div></div>
-      <div style="margin-top:20px">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Or jump straight to a category</div>
-        <div id="con-cat-shortcuts" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-      </div>
+      <div style="margin-top:20px"><div style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Or jump to a category</div><div id="cshorts" style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
     </div>
-    <div id="con-step2" style="display:none">
+    <div id="cs2" style="display:none">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="showConStep1()">← Back</button>
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px">
-          <div id="con-badge-title" style="font-weight:700;font-size:14px;color:var(--white)"></div>
-          <div id="con-badge-meta" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+        <button class="btn bo bsm" onclick="showCS1()">← Back</button>
+        <div style="flex:1;background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:10px 16px">
+          <div id="cbadget" style="font-weight:700;font-size:14px;color:var(--wht)"></div>
+          <div id="cbadgem" style="font-size:12px;color:var(--mut);margin-top:2px"></div>
         </div>
-        <button class="btn btn-primary" id="submit-consumption-btn">✅ Submit</button>
+        <button class="btn bp" id="subcon">✅ Submit</button>
       </div>
-      <div id="con-cat-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
-      <div id="con-active-group"></div>
-      <div id="con-summary" style="margin-top:12px;display:none">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Items Entered</div>
-        <div id="con-summary-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-      </div>
-      <div style="position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 18px;display:flex;justify-content:flex-end;margin-top:16px;border-radius:0 0 10px 10px">
-        <button class="btn btn-primary" onclick="document.getElementById('submit-consumption-btn').click()">✅ Submit Consumption</button>
+      <div id="ctabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div id="cgrp"></div>
+      <div id="csum" style="margin-top:12px;display:none"><div style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Items Entered</div><div id="csumlist" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+      <div style="position:sticky;bottom:0;background:var(--sur);border-top:1px solid var(--bdr);padding:12px 18px;display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn bp" onclick="document.getElementById('subcon').click()">✅ Submit Consumption</button>
       </div>
     </div>
   </section>
 
   <!-- HISTORY -->
-  <section class="page" id="page-history">
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="orders-hist">Orders</button>
-      <button class="tab-btn" data-tab="events-hist">Consumption Events</button>
-    </div>
-    <div id="orders-hist"><div class="card"><div class="table-wrap">
-      <table><thead><tr><th>Date</th><th>Ordered By</th><th>Items</th><th>Est. Value</th><th>Notes</th><th></th></tr></thead>
-      <tbody id="hist-orders-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table>
-    </div></div></div>
-    <div id="events-hist" style="display:none"><div class="card"><div class="table-wrap">
-      <table><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Recorded By</th><th>Items</th><th></th></tr></thead>
-      <tbody id="hist-events-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody></table>
-    </div></div></div>
+  <section class="pg" id="p-history">
+    <div class="tabs"><button class="tb on" data-t="oh">Orders</button><button class="tb" data-t="ch">Consumption</button></div>
+    <div id="oh"><div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>By</th><th>Items</th><th>Value</th><th>Notes</th><th></th></tr></thead><tbody id="ohb"><tr><td colspan="6"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div></div></div>
+    <div id="ch" style="display:none"><div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>By</th><th>Items</th><th></th></tr></thead><tbody id="chb"><tr><td colspan="6"><div class="ld"><div class="sp"></div></div></td></tr></tbody></table></div></div></div>
   </section>
 
   <!-- REPORTS -->
-  <section class="page" id="page-reports">
+  <section class="pg" id="p-reports">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-      <div>
-        <h3 style="font-size:15px;font-weight:700;color:var(--white)">End of Month Reports</h3>
-        <p style="font-size:12px;color:var(--muted);margin-top:4px">Auto-generated on the 1st of each month.</p>
-      </div>
+      <div><h4 style="font-size:15px;font-weight:700;color:var(--wht)">End of Month Reports</h4><p style="font-size:12px;color:var(--mut);margin-top:4px">Auto-generated on the 1st of each month.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="generateMonthlyReport(false)">⚡ Generate This Month</button>
-        <button class="btn btn-outline btn-sm" onclick="printInventory()">🖨️ Print Inventory</button>
-        <button class="btn btn-success btn-sm" onclick="exportInventoryExcel()">📊 Export Excel</button>
+        <button class="btn bo bsm" onclick="genReport(false)">⚡ Generate Now</button>
+        <button class="btn bo bsm" onclick="printInv()">🖨️ Print Inventory</button>
+        <button class="btn bs bsm" onclick="exportInvXL()">📊 Export Excel</button>
       </div>
     </div>
-    <div class="card"><div class="card-header"><h3>Saved Monthly Reports</h3></div>
-    <div id="reports-list"><div class="loading"><div class="spinner"></div> Loading…</div></div></div>
+    <div class="card"><div class="ch"><h4>Saved Reports</h4></div><div id="rlist"><div class="ld"><div class="sp"></div></div></div></div>
   </section>
 
   <!-- SETTINGS -->
-  <section class="page" id="page-settings">
-    <div class="card" style="margin-bottom:16px"><div class="card-header"><h3>Team Members</h3></div><div class="card-body">
+  <section class="pg" id="p-settings">
+    <div class="card" style="margin-bottom:16px"><div class="ch"><h4>Team Members</h4></div><div class="cb">
       <div style="display:flex;gap:10px;margin-bottom:12px">
-        <input type="text" id="new-member-input" placeholder="Enter name" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-size:13px">
-        <button class="btn btn-success btn-sm" id="add-member-btn">+ Add</button>
+        <input type="text" id="nmi" placeholder="Enter name" style="flex:1;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px">
+        <button class="btn bs bsm" id="addmb">+ Add</button>
       </div>
-      <div id="member-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div id="mlist" style="display:flex;flex-wrap:wrap;gap:8px"></div>
     </div></div>
-    <div class="card"><div class="card-header"><h3>Monthly Opening Stock Reset</h3></div><div class="card-body">
-      <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Resets all orders/consumed counters and sets current SOH as the new opening baseline.</p>
-      <button class="btn btn-outline" id="reset-month-btn">🔄 Reset Opening Stock to Current SOH</button>
+    <div class="card"><div class="ch"><h4>Monthly Stock Reset</h4></div><div class="cb">
+      <p style="color:var(--mut);font-size:13px;margin-bottom:14px">Sets current SOH as the new opening baseline and zeros the counters.</p>
+      <button class="btn bo" id="rstbtn">🔄 Reset Opening Stock</button>
     </div></div>
   </section>
 </main>
 
-<!-- MODALS -->
-<div class="modal-overlay" id="modal-email">
-  <div class="modal" style="max-width:720px">
-    <div class="modal-header"><h3 id="modal-email-title">📧 Order Email — Review &amp; Copy</h3><button class="modal-close" data-close="modal-email">✕</button></div>
-    <div class="modal-body" id="modal-email-body">
-      <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Copy the email and paste into Outlook. Then click <strong>Confirm &amp; Update Inventory</strong>.</p>
-      <div style="display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:14px" id="email-tabs"></div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-size:13px;line-height:1.9;white-space:pre-wrap;color:var(--text);max-height:360px;overflow-y:auto" id="email-preview-text"></div>
-    </div>
-    <div class="modal-footer" id="modal-email-footer">
-      <button class="btn btn-outline" id="copy-email-btn">📋 Copy Email</button>
-      <button class="btn btn-outline" data-close="modal-email">Cancel</button>
-      <button class="btn btn-success" id="confirm-order-btn">✅ Confirm &amp; Update Inventory</button>
-    </div>
-  </div>
-</div>
+<!-- EMAIL MODAL -->
+<div class="mo" id="memail"><div class="md" style="max-width:720px">
+  <div class="mh"><h4 id="metitle">📧 Order Email</h4><button class="mc" onclick="closeMo('memail')">✕</button></div>
+  <div class="mb" id="mebody"></div>
+  <div class="mf" id="mefooter"></div>
+</div></div>
 
-<div class="modal-overlay" id="modal-edit">
-  <div class="modal"><div class="modal-header"><h3>Edit Stock — <span id="edit-item-name"></span></h3><button class="modal-close" data-close="modal-edit">✕</button></div>
-  <div class="modal-body">
-    <div class="form-row">
-      <div class="form-group"><label>Opening SOH</label><input type="number" id="edit-opening" step="1" min="0"></div>
-      <div class="form-group"><label>Current SOH (override)</label><input type="number" id="edit-current" step="1" min="0"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Supplier</label><input type="text" id="edit-supplier"></div>
-      <div class="form-group"><label>LUC (ex GST) $</label><input type="number" id="edit-luc" step="0.01" min="0"></div>
-    </div>
-    <input type="hidden" id="edit-item-id">
+<!-- EDIT MODAL -->
+<div class="mo" id="medit"><div class="md">
+  <div class="mh"><h4>Edit Stock — <span id="eitn"></span></h4><button class="mc" onclick="closeMo('medit')">✕</button></div>
+  <div class="mb">
+    <div class="fr"><div class="fg"><label>Opening SOH</label><input type="number" id="eop" step="1" min="0"></div><div class="fg"><label>Current SOH (override)</label><input type="number" id="ecur" step="1" min="0"></div></div>
+    <div class="fr"><div class="fg"><label>Supplier</label><input type="text" id="esupf"></div><div class="fg"><label>LUC (ex GST) $</label><input type="number" id="eluc" step="0.01" min="0"></div></div>
+    <input type="hidden" id="eid">
   </div>
-  <div class="modal-footer"><button class="btn btn-outline" data-close="modal-edit">Cancel</button><button class="btn btn-primary" id="save-edit-btn">Save</button></div>
-  </div>
-</div>
+  <div class="mf"><button class="btn bo" onclick="closeMo('medit')">Cancel</button><button class="btn bp" id="saveedit">Save</button></div>
+</div></div>
 
-<div class="modal-overlay" id="modal-order-detail">
-  <div class="modal"><div class="modal-header"><h3>Order Detail</h3><button class="modal-close" data-close="modal-order-detail">✕</button></div>
-  <div class="modal-body" id="order-detail-body"></div></div>
-</div>
-
-<div class="modal-overlay" id="modal-event-detail">
-  <div class="modal"><div class="modal-header"><h3>Consumption Detail</h3><button class="modal-close" data-close="modal-event-detail">✕</button></div>
-  <div class="modal-body" id="event-detail-body"></div></div>
-</div>
+<!-- ORDER DETAIL MODAL -->
+<div class="mo" id="mordm"><div class="md"><div class="mh"><h4>Order Detail</h4><button class="mc" onclick="closeMo('mordm')">✕</button></div><div class="mb" id="mordb"></div></div></div>
+<!-- EVENT DETAIL MODAL -->
+<div class="mo" id="meventm"><div class="md"><div class="mh"><h4>Consumption Detail</h4><button class="mc" onclick="closeMo('meventm')">✕</button></div><div class="mb" id="meventb"></div></div></div>
 
 <div id="toast"></div>
+
 <script>
-
-const SUPABASE_URL = 'https://sqdliwlqmcgheyxrjalp.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_eTyNtaImydanSt8kom9kNw_SqMwdxU9';
-const AUTH_ENCODED = 'UHdDU3lkbmV5MjAyNiE=';
-
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const $ = id => document.getElementById(id);
-const fmt = n => isNaN(n)?'$0.00':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-const fmtN = n => isNaN(n)?'0':Math.round(Number(n)).toString();
-const today = () => new Date().toISOString().split('T')[0];
+// ── CONFIG ────────────────────────────────────────────────────
+var SBU='https://sqdliwlqmcgheyxrjalp.supabase.co';
+var SBK='sb_publishable_eTyNtaImydanSt8kom9kNw_SqMwdxU9';
+var PWD='UHdDU3lkbmV5MjAyNiE='; // PwCSydney2026!
 
 // ── AUTH ──────────────────────────────────────────────────────
-function doLogin() {
-  const passEl = $('login-password'), errEl = $('login-error'), btn = $('login-btn');
-  const entered = (passEl?.value||'').trim();
-  errEl.classList.remove('show');
-  if (!entered) { errEl.textContent='Please enter the password.'; errEl.classList.add('show'); return; }
-  btn.disabled=true; btn.textContent='Checking…';
-  setTimeout(function() {
-    if (btoa(entered) === AUTH_ENCODED) {
-      localStorage.setItem('pwc_bev_auth', AUTH_ENCODED);
-      location.reload();
+document.getElementById('lbtn').addEventListener('click', login);
+document.getElementById('lpw').addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
+
+function login(){
+  var v=document.getElementById('lpw').value.trim();
+  var e=document.getElementById('lerr');
+  var b=document.getElementById('lbtn');
+  e.style.display='none';
+  if(!v){ e.textContent='Please enter the password.'; e.style.display='block'; return; }
+  b.disabled=true; b.textContent='Checking…';
+  setTimeout(function(){
+    if(btoa(v)===PWD){
+      localStorage.setItem('pbev',PWD);
+      document.getElementById('ls').classList.add('hide');
+      document.getElementById('sb').style.display='';
+      document.getElementById('mn').style.display='';
+      if(window.innerWidth<=800) document.getElementById('hbg').style.display='flex';
+      startApp();
     } else {
-      errEl.textContent='Incorrect password. Try again.'; errEl.classList.add('show');
-      btn.disabled=false; btn.textContent='Sign In';
-      passEl.value=''; passEl.focus();
+      e.textContent='Incorrect password.'; e.style.display='block';
+      b.disabled=false; b.textContent='Sign In';
+      document.getElementById('lpw').value='';
+      document.getElementById('lpw').focus();
     }
-  }, 300);
+  },300);
 }
 
-function doLogout() {
-  if (!confirm('Sign out?')) return;
-  localStorage.removeItem('pwc_bev_auth');
+document.getElementById('outbtn').addEventListener('click', function(){
+  if(!confirm('Sign out?')) return;
+  localStorage.removeItem('pbev');
   location.reload();
-}
-
-function toggleSidebar() {
-  $('sidebar').classList.toggle('open');
-  $('sidebar-overlay').classList.toggle('open');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  var pp = $('login-password');
-  if (pp) pp.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
-  $('sidebar-overlay').onclick = function(){ $('sidebar').classList.remove('open'); $('sidebar-overlay').classList.remove('open'); };
-  document.querySelectorAll('.nav-link').forEach(function(l){
-    l.addEventListener('click', function(){ if(window.innerWidth<=800){ $('sidebar').classList.remove('open'); $('sidebar-overlay').classList.remove('open'); } });
-  });
 });
 
-// ── INIT ─────────────────────────────────────────────────────
-if (localStorage.getItem('pwc_bev_auth') === AUTH_ENCODED) {
-  document.addEventListener('DOMContentLoaded', function() {
-    $('login-screen').classList.add('hidden');
-    $('sidebar').style.display='';
-    $('main').style.display='';
-    if (window.innerWidth<=800) $('hamburger').style.display='flex';
+// Check if already logged in
+if(localStorage.getItem('pbev')===PWD){
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('ls').classList.add('hide');
+    document.getElementById('sb').style.display='';
+    document.getElementById('mn').style.display='';
+    if(window.innerWidth<=800) document.getElementById('hbg').style.display='flex';
     startApp();
   });
 }
 
-async function startApp() {
-  loadSettings();
-  await ensureSeeded();
-  loadDashboard();
-  checkAutoMonthlyReport();
-}
+// ── HAMBURGER ─────────────────────────────────────────────────
+document.getElementById('hbg').addEventListener('click', function(){
+  document.getElementById('sb').classList.toggle('open');
+  document.getElementById('ov').classList.toggle('open');
+});
+document.getElementById('ov').addEventListener('click', function(){
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('ov').classList.remove('open');
+});
 
-// ── SEED DATA ─────────────────────────────────────────────────
-const SEED_ITEMS = [
-  ["Pol Roger Vintage 2015","Champagne","Luxe $65+","2015",144.00,false],
-  ["Perrier-Jouet Blanc de Blanc NV","Champagne","Luxe $65+","NV",104.55,false],
-  ["Ruinart R de Ruinart NV","Champagne","Luxe $65+","NV",100.00,false],
-  ["Levantine Hill Blanc de Blanc 2013","Champagne","Luxe $65+","2013",0,false],
-  ["Arras Grand Vintage 2008","Sparkling","Luxe $65+","2008",76.76,false],
-  ["Leeuwin Estate Art Series Riesling 2023","White","Luxe $65+","2023",0,false],
-  ["Fraser Gallop Palladian Chardonnay 2020","White","Luxe $65+","2020",104.54,false],
-  ["Hardy's Eileen Chardonnay 2021","White","Luxe $65+","2021",109.00,false],
-  ["Tyrell's Vat 47 Chardonnay 2021","White","Luxe $65+","2021",70.00,false],
-  ["Cullen Legacy Series Sav Blanc 2019","White","Luxe $65+","2019",81.82,false],
-  ["St Hallet Old Block Shiraz 2017","Red","Luxe $65+","2017",120.83,false],
-  ["Oakridge 864 Pinot Noir 2019","Red","Luxe $65+","2019",89.99,false],
-  ["Levantine Hill Pinot Noir 2019","Red","Luxe $65+","2019",79.99,false],
-  ["Hickinbotham The Peake Cab Shiraz 2020","Red","Luxe $65+","2020",142.00,false],
-  ["Hickinbotham The Peake Cab Shiraz 2019","Red","Luxe $65+","2019",142.00,false],
-  ["Charles Melton Nine Popes GSM 2019","Red","Luxe $65+","2019",85.00,false],
-  ["Giant Steps Sexton Pinot Noir 2023","Red","Luxe $65+","2023",65.00,false],
-  ["Ten Minutes Coolart Rd Pinot Noir 2022","Red","Luxe $65+","2022",82.00,false],
-  ["Tolpuddle Pinot Noir 2020","Red","Luxe $65+","2020",93.00,false],
-  ["Veuve Cliquot Brut NV","Champagne","Client $30-65","NV",74.99,false],
-  ["House of Arras Brut Elite NV","Sparkling","Client $30-65","NV",40.00,false],
-  ["Jim Barry Assyrtiko 2022","White","Client $30-65","2022",23.65,false],
-  ["Stonier Reserve Chardonnay 2022","White","Client $30-65","2022",41.66,false],
-  ["Jim Barry The Florita Riesling 2024","White","Client $30-65","2024",38.70,false],
-  ["Grosset Springvale Riesling 2021","White","Client $30-65","2021",57.99,false],
-  ["Ten Minutes by Tractor Chardonnay","White","Client $30-65","",35.00,false],
-  ["Ravensworth Riesling","White","Client $30-65","",40.00,false],
-  ["Tyrrells VAT 1 Semillon 2016","White","Client $30-65","2016",57.27,false],
-  ["Cullen Wines Sauv Blanc Legacy 2022","White","Client $30-65","2022",32.00,false],
-  ["Domaine Christian Salmon Sancerre 2020","White","Client $30-65","2020",48.99,false],
-  ["Orlando Steingarten Riesling 2015","White","Client $30-65","2015",49.99,false],
-  ["Maison Saint AIX Rose 2021","Rose","Client $30-65","2021",42.00,false],
-  ["Chateau Minuty 2021","Rose","Client $30-65","2021",25.00,false],
-  ["St Hallet Blackwell Shiraz 2019","Red","Client $30-65","2019",50.10,false],
-  ["Yangarra Estate GSM 2021","Red","Client $30-65","2021",38.99,false],
-  ["Grant Burge Abednego GSM 2016","Red","Client $30-65","2016",64.37,false],
-  ["Stonier Reserve Pinot Noir 2022","Red","Client $30-65","2022",53.75,false],
-  ["Katnook Cabernet Sauvignon 2021","Red","Client $30-65","2021",30.10,false],
-  ["Katnook Cabernet Sauvignon 2022","Red","Client $30-65","2022",30.10,false],
-  ["Jim Barry McRae Wood Shiraz 2021","Red","Client $30-65","2021",38.84,false],
-  ["Geoff Merrill Reserve Cab Sauv 2014","Red","Client $30-65","2014",51.99,false],
-  ["Sang de Pigeon Pinot Noir 2018","Red","Client $30-65","2018",30.00,false],
-  ["Paringa Estate Shiraz 2019","Red","Client $30-65","2019",47.99,false],
-  ["Broke Fordwich Margan Shiraz Mourvedre 2019","Red","Client $30-65","2019",60.00,false],
-  ["Rolf Binder Hanisch Shiraz 2017","Red","Client $30-65","2017",68.18,false],
-  ["Pooley Pinot Noir 2018","Red","Client $30-65","2018",65.00,false],
-  ["Anaperenna by Glaetzer 2019","Red","Client $30-65","2019",49.99,false],
-  ["Croser Brut NV","Sparkling","Staff <$30","NV",24.47,false],
-  ["Ark Hill Regional Blanc De Blanc NV","Sparkling","Staff <$30","NV",29.00,false],
-  ["Brokenwood Pinot Gris 2024","White","Staff <$30","2024",23.44,false],
-  ["Yabby Lake Pinot Gris 2023","White","Staff <$30","2023",26.00,false],
-  ["Yabby Lake Pinot Gris 2024","White","Staff <$30","2024",26.00,false],
-  ["Robert Stein Mudgee Dry Riesling 2022","White","Staff <$30","2022",25.18,false],
-  ["Minimum Chardonnay 2018","White","Staff <$30","2018",28.00,false],
-  ["Nick Spencer Hilltop Rose 2023","Rose","Staff <$30","2023",16.19,false],
-  ["Oakridge Willowlake Pinot Noir 2019","Red","Staff <$30","2019",24.99,false],
-  ["Brokenwood Pinot Noir 2024","Red","Staff <$30","2024",23.44,false],
-  ["First Ridge Sangiovese 2021","Red","Staff <$30","2021",27.00,false],
-  ["Michael Hall Sang de Pigeon Pinot Noir 2018","Red","Staff <$30","2018",30.00,false],
-  ["Viticoltori Senesi Aretini Chianti 2023","Red","Staff <$30","2023",0,false],
-  ["Tim Adam Botrytis Riesling 2011","Dessert Wine","Staff <$30","2011",25.99,false],
-  ["Vinada Chardonnay Sparkling Non Alc NV","Non-Alc Wine","Non-Alc","NV",22.50,false],
-  ["Senorio De La Tautila White Non Alc NV","Non-Alc Wine","Non-Alc","NV",20.00,false],
-  ["Senorio De La Tautila Red Non Alc NV","Non-Alc Wine","Non-Alc","NV",20.00,false],
-  ["Plus and Minus Pinot Noir Non Alc 2022","Non-Alc Wine","Non-Alc","2022",21.90,false],
-  ["Naked GandT","Non-Alc Cocktail","Non-Alc","",2.55,false],
-  ["Naked Mojito","Non-Alc Cocktail","Non-Alc","",2.55,false],
-  ["Naked Margarita","Non-Alc Cocktail","Non-Alc","",2.55,false],
-  ["Naked Italian Spritz","Non-Alc Cocktail","Non-Alc","",2.55,false],
-  ["Young Henry Newtowner 330ml","Beer","Beer/Spirits","",2.77,false],
-  ["Peroni 330ml","Beer","Beer/Spirits","",0,false],
-  ["James Squire Shackles 330ml","Beer","Beer/Spirits","",2.46,false],
-  ["James Boags Lager 375ml","Beer","Beer/Spirits","",0,false],
-  ["Kosciuszko Beer","Beer","Beer/Spirits","",0,false],
-  ["Carlton Draught 375ml","Beer","Beer/Spirits","",0,false],
-  ["Carlton Dry 375ml","Beer","Beer/Spirits","",0,false],
-  ["Coopers Light 355ml","Beer","Beer/Spirits","",2.00,false],
-  ["Heaps Normal Quiet XPA 0pct Alc","Beer","Beer/Spirits","",1.59,false],
-  ["Coke No Sugar 330ml","Soft Drink","Complimentary","",2.08,true],
-  ["Fanta 330ml","Soft Drink","Complimentary","",2.08,true],
-  ["Sprite 330ml","Soft Drink","Complimentary","",2.08,true],
-  ["Coca Cola 330ml","Soft Drink","Complimentary","",2.08,true],
-  ["Coke No Sugar 1.25L","Soft Drink","Complimentary","",2.85,true],
-  ["Fanta 1.25L","Soft Drink","Complimentary","",2.85,true],
-  ["Sprite 1.25L","Soft Drink","Complimentary","",2.85,true],
-  ["Coca Cola Classic 1.25L","Soft Drink","Complimentary","",2.85,true],
-  ["Yaru Sparkling Water 500ml","Water","Complimentary","",2.60,true],
-  ["Yaru Still Mineral Water 300ml","Water","Complimentary","",2.60,true],
-  ["Yaru Sparkling Water 300ml","Water","Complimentary","",2.60,true],
-  ["Fevertree Mediterranean Tonic 500ml","Soft Drink","Complimentary","",2.21,true],
-  ["Fevertree Elderflower Tonic 500ml","Soft Drink","Complimentary","",2.21,true],
-  ["San Pellegrino 750ml","Water","Complimentary","",2.21,true],
-  ["Ozharvest Strawberry Lemonade","Soft Drink","Complimentary","",3.50,true],
-  ["Ozharvest Lemonade Original Cans","Soft Drink","Complimentary","",3.50,true],
-  ["Kakadu Conscious Drink Sparkling Rose NA","Soft Drink","Complimentary","",25.00,true],
-  ["Red Bull Energy Drinks","Soft Drink","Complimentary","",0,true],
-  ["Noah Orange Juice","Juice","Complimentary","",2.85,true],
-  ["Noah Apple Juice","Juice","Complimentary","",2.85,true],
-  ["Noah Carrot Apple Ginger Veggie","Juice","Complimentary","",2.85,true],
-  ["Noah Green Juice","Juice","Complimentary","",2.85,true],
-  ["Aperol 700ml","Spirit","Beer/Spirits","",78.37,false],
-  ["Campari 700ml","Spirit","Beer/Spirits","",49.00,false],
-  ["Four Pillars Gin 700ml","Spirit","Beer/Spirits","",82.00,false],
-  ["Four Pillars Yuzu Gin 700ml","Spirit","Beer/Spirits","",67.00,false],
-  ["Artisan Settlers Yuzu Gin 700ml","Spirit","Beer/Spirits","",85.00,false],
-  ["Weis Zwetschgen Plum Brandy","Spirit","Beer/Spirits","",66.99,false],
-  ["Brookies Byron Bay Dry Gin 700ml","Spirit","Beer/Spirits","",81.00,false],
-  ["Ink Gin 700ml","Spirit","Beer/Spirits","",84.00,false],
-  ["Tanqueray Gin 700ml","Spirit","Beer/Spirits","",59.00,false],
-  ["23rd St Gin","Spirit","Beer/Spirits","",66.00,false],
-  ["Monin Green Apple Syrup 700ml","Mixer","Beer/Spirits","",22.38,false],
-  ["Bickfords Raspberry Cordial 750ml","Mixer","Beer/Spirits","",4.83,false],
-  ["Rubia Strawberry Liqueur 700ml","Mixer","Beer/Spirits","",45.00,false],
-  ["Crawseys Grenadine 750ml","Mixer","Beer/Spirits","",16.99,false],
-  ["Angostura Bitters 200ml","Mixer","Beer/Spirits","",32.00,false],
-  ["Cruz Madere 2L","Spirit","Beer/Spirits","",0,false],
-];
+// ── SUPABASE ──────────────────────────────────────────────────
+var sb = supabase.createClient(SBU, SBK);
+var items=[], settings={members:[]}, pending=null, activeSup=null, activeCCat=null, chart=null;
 
-const SUPPLIERS = {
-  'Sydney Wines':  { contact:'Antony',       email:'antony@sydneywine.com.au' },
-  'Noah Juices':   { contact:'Mark',         email:'orders@baco.com.au' },
-  "Young Henry's": { contact:'Ben Stockton', email:'stocko@younghenrys.com' },
-};
-
-function getSupplierName(name) {
-  const n=(name||'').toLowerCase();
-  if(n.includes('noah')) return 'Noah Juices';
-  if(n.includes('young henry')) return "Young Henry's";
-  return 'Sydney Wines';
-}
-
-function cartonSize(item) {
-  const n=(item.name||'').toLowerCase(), cat=item.category;
-  if(cat==='Beer') return {qty:24,label:'24 cans/carton'};
-  if(cat==='Soft Drink') return n.includes('1.25')?{qty:12,label:'12x1.25L/carton'}:{qty:24,label:'24x330ml/carton'};
-  if(cat==='Water') return (n.includes('750ml')||n.includes('500ml'))?{qty:12,label:'12 bottles/carton'}:{qty:24,label:'24x300ml/carton'};
-  if(cat==='Juice') return {qty:12,label:'12 bottles/carton'};
-  if(cat==='Non-Alc Cocktail') return {qty:24,label:'24 cans/carton'};
-  if(cat==='Spirit'||cat==='Mixer') return {qty:1,label:'per bottle'};
-  return {qty:12,label:'12 bottles/carton'};
-}
-
+function G(id){ return document.getElementById(id); }
+function fmt(n){ return isNaN(n)?'$0.00':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtN(n){ return Math.max(0,Math.round(Number(n)||0)).toString(); }
+function td(){ return new Date().toISOString().split('T')[0]; }
 function soh(i){ return (parseFloat(i.opening_soh)||0)+(parseFloat(i.orders_in)||0)-(parseFloat(i.consumed)||0); }
-function statusBadge(i){ const s=soh(i); return s<=0?'<span class="badge badge-out">Out</span>':s<=3?'<span class="badge badge-low">Low</span>':'<span class="badge badge-ok">OK</span>'; }
-function toast(msg,isError=false){ const t=$('toast');t.textContent=msg;t.className=isError?'error':'';t.style.display='block';setTimeout(()=>t.style.display='none',3500); }
-
-let items=[], settings={members:[]}, pendingOrder=null, activeSupplier=null, activeConCat=null, chartInstance=null;
+function sbadge(i){ var s=soh(i); return s<=0?'<span class="badge bout">Out</span>':s<=3?'<span class="badge blow">Low</span>':'<span class="badge bok">OK</span>'; }
+function toast(m,e){ var t=G('toast');t.textContent=m;t.className=e?'err':'';t.style.display='block';setTimeout(function(){t.style.display='none';},3500); }
+function closeMo(id){ G(id).classList.remove('on'); }
+function openMo(id){ G(id).classList.add('on'); }
 
 // ── NAV ──────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',inventory:'Inventory',orders:'New Order',consumption:'Consumption',history:'History',reports:'Reports',settings:'Settings'};
+var TITLES={dashboard:'Dashboard',inventory:'Inventory',orders:'New Order',consumption:'Consumption',history:'History',reports:'Reports',settings:'Settings'};
 
-document.querySelectorAll('.nav-link').forEach(link=>{
-  link.addEventListener('click',e=>{
+document.querySelectorAll('#nav a').forEach(function(a){
+  a.addEventListener('click', function(e){
     e.preventDefault();
-    const page=link.dataset.page;
-    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    link.classList.add('active');
-    $('page-'+page).classList.add('active');
-    $('page-title').textContent=PAGE_TITLES[page]||page;
-    if(page==='dashboard') loadDashboard();
-    if(page==='inventory') loadInventory();
-    if(page==='orders') loadOrderForm();
-    if(page==='consumption') loadConsumptionForm();
-    if(page==='history') loadHistory();
-    if(page==='reports') loadReports();
-    if(page==='settings') loadSettings();
+    var p=a.dataset.p;
+    document.querySelectorAll('#nav a').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.pg').forEach(function(x){x.classList.remove('on');});
+    a.classList.add('active');
+    G('p-'+p).classList.add('on');
+    G('ptitle').textContent=TITLES[p]||p;
+    document.getElementById('sb').classList.remove('open');
+    document.getElementById('ov').classList.remove('open');
+    if(p==='dashboard') loadDash();
+    if(p==='inventory') renderInv();
+    if(p==='orders') loadOrders();
+    if(p==='consumption') loadCon();
+    if(p==='history') loadHist();
+    if(p==='reports') loadReports();
+    if(p==='settings') loadSettings();
   });
 });
 
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('#page-history > div[id]').forEach(d=>d.style.display='none');
-    $(btn.dataset.tab).style.display='block';
+document.querySelectorAll('.tb').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.tb').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    document.querySelectorAll('#p-history > div[id]').forEach(function(d){d.style.display='none';});
+    G(b.dataset.t).style.display='block';
   });
 });
 
-document.querySelectorAll('[data-close]').forEach(btn=>{
-  btn.addEventListener('click',()=>$(btn.dataset.close).classList.remove('open'));
-});
-document.querySelectorAll('.modal-overlay').forEach(o=>{
-  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
+document.querySelectorAll('.mo').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('on'); });
 });
 
-// ── SEED & FETCH ──────────────────────────────────────────────
-async function ensureSeeded(){
+// ── START ─────────────────────────────────────────────────────
+async function startApp(){
+  loadSettings();
+  await seedItems();
+  loadDash();
+  autoReport();
+}
+
+// ── SEED ─────────────────────────────────────────────────────
+var SEED=[
+  ["Pol Roger Vintage 2015","Champagne","Luxe $65+","2015",144.00,false],["Perrier-Jouet Blanc de Blanc NV","Champagne","Luxe $65+","NV",104.55,false],["Ruinart R de Ruinart NV","Champagne","Luxe $65+","NV",100.00,false],["Levantine Hill Blanc de Blanc 2013","Champagne","Luxe $65+","2013",0,false],["Arras Grand Vintage 2008","Sparkling","Luxe $65+","2008",76.76,false],["Leeuwin Estate Art Series Riesling 2023","White","Luxe $65+","2023",0,false],["Fraser Gallop Palladian Chardonnay 2020","White","Luxe $65+","2020",104.54,false],["Hardys Eileen Chardonnay 2021","White","Luxe $65+","2021",109.00,false],["Tyrells Vat 47 Chardonnay 2021","White","Luxe $65+","2021",70.00,false],["Cullen Legacy Series Sav Blanc 2019","White","Luxe $65+","2019",81.82,false],["St Hallet Old Block Shiraz 2017","Red","Luxe $65+","2017",120.83,false],["Oakridge 864 Pinot Noir 2019","Red","Luxe $65+","2019",89.99,false],["Levantine Hill Pinot Noir 2019","Red","Luxe $65+","2019",79.99,false],["Hickinbotham The Peake Cab Shiraz 2020","Red","Luxe $65+","2020",142.00,false],["Hickinbotham The Peake Cab Shiraz 2019","Red","Luxe $65+","2019",142.00,false],["Charles Melton Nine Popes GSM 2019","Red","Luxe $65+","2019",85.00,false],["Giant Steps Sexton Pinot Noir 2023","Red","Luxe $65+","2023",65.00,false],["Ten Minutes Coolart Rd Pinot Noir 2022","Red","Luxe $65+","2022",82.00,false],["Tolpuddle Pinot Noir 2020","Red","Luxe $65+","2020",93.00,false],
+  ["Veuve Cliquot Brut NV","Champagne","Client $30-65","NV",74.99,false],["House of Arras Brut Elite NV","Sparkling","Client $30-65","NV",40.00,false],["Jim Barry Assyrtiko 2022","White","Client $30-65","2022",23.65,false],["Stonier Reserve Chardonnay 2022","White","Client $30-65","2022",41.66,false],["Jim Barry The Florita Riesling 2024","White","Client $30-65","2024",38.70,false],["Grosset Springvale Riesling 2021","White","Client $30-65","2021",57.99,false],["Ten Minutes by Tractor Chardonnay","White","Client $30-65","",35.00,false],["Ravensworth Riesling","White","Client $30-65","",40.00,false],["Tyrells VAT 1 Semillon 2016","White","Client $30-65","2016",57.27,false],["Cullen Wines Sauv Blanc Legacy 2022","White","Client $30-65","2022",32.00,false],["Domaine Christian Salmon Sancerre 2020","White","Client $30-65","2020",48.99,false],["Orlando Steingarten Riesling 2015","White","Client $30-65","2015",49.99,false],["Maison Saint AIX Rose 2021","Rose","Client $30-65","2021",42.00,false],["Chateau Minuty 2021","Rose","Client $30-65","2021",25.00,false],["St Hallet Blackwell Shiraz 2019","Red","Client $30-65","2019",50.10,false],["Yangarra Estate GSM 2021","Red","Client $30-65","2021",38.99,false],["Grant Burge Abednego GSM 2016","Red","Client $30-65","2016",64.37,false],["Stonier Reserve Pinot Noir 2022","Red","Client $30-65","2022",53.75,false],["Katnook Cabernet Sauvignon 2021","Red","Client $30-65","2021",30.10,false],["Katnook Cabernet Sauvignon 2022","Red","Client $30-65","2022",30.10,false],["Jim Barry McRae Wood Shiraz 2021","Red","Client $30-65","2021",38.84,false],["Geoff Merrill Reserve Cab Sauv 2014","Red","Client $30-65","2014",51.99,false],["Sang de Pigeon Pinot Noir 2018","Red","Client $30-65","2018",30.00,false],["Paringa Estate Shiraz 2019","Red","Client $30-65","2019",47.99,false],["Broke Fordwich Margan Shiraz Mourvedre 2019","Red","Client $30-65","2019",60.00,false],["Rolf Binder Hanisch Shiraz 2017","Red","Client $30-65","2017",68.18,false],["Pooley Pinot Noir 2018","Red","Client $30-65","2018",65.00,false],["Anaperenna by Glaetzer 2019","Red","Client $30-65","2019",49.99,false],
+  ["Croser Brut NV","Sparkling","Staff <$30","NV",24.47,false],["Ark Hill Regional Blanc De Blanc NV","Sparkling","Staff <$30","NV",29.00,false],["Brokenwood Pinot Gris 2024","White","Staff <$30","2024",23.44,false],["Yabby Lake Pinot Gris 2023","White","Staff <$30","2023",26.00,false],["Yabby Lake Pinot Gris 2024","White","Staff <$30","2024",26.00,false],["Robert Stein Mudgee Dry Riesling 2022","White","Staff <$30","2022",25.18,false],["Minimum Chardonnay 2018","White","Staff <$30","2018",28.00,false],["Nick Spencer Hilltop Rose 2023","Rose","Staff <$30","2023",16.19,false],["Oakridge Willowlake Pinot Noir 2019","Red","Staff <$30","2019",24.99,false],["Brokenwood Pinot Noir 2024","Red","Staff <$30","2024",23.44,false],["First Ridge Sangiovese 2021","Red","Staff <$30","2021",27.00,false],["Michael Hall Sang de Pigeon Pinot Noir 2018","Red","Staff <$30","2018",30.00,false],["Viticoltori Senesi Aretini Chianti 2023","Red","Staff <$30","2023",0,false],["Tim Adam Botrytis Riesling 2011","Dessert Wine","Staff <$30","2011",25.99,false],
+  ["Vinada Chardonnay Sparkling Non Alc NV","Non-Alc Wine","Non-Alc","NV",22.50,false],["Senorio De La Tautila White Non Alc NV","Non-Alc Wine","Non-Alc","NV",20.00,false],["Senorio De La Tautila Red Non Alc NV","Non-Alc Wine","Non-Alc","NV",20.00,false],["Plus and Minus Pinot Noir Non Alc 2022","Non-Alc Wine","Non-Alc","2022",21.90,false],["Naked GandT","Non-Alc Cocktail","Non-Alc","",2.55,false],["Naked Mojito","Non-Alc Cocktail","Non-Alc","",2.55,false],["Naked Margarita","Non-Alc Cocktail","Non-Alc","",2.55,false],["Naked Italian Spritz","Non-Alc Cocktail","Non-Alc","",2.55,false],
+  ["Young Henry Newtowner 330ml","Beer","Beer/Spirits","",2.77,false],["Peroni 330ml","Beer","Beer/Spirits","",0,false],["James Squire Shackles 330ml","Beer","Beer/Spirits","",2.46,false],["James Boags Lager 375ml","Beer","Beer/Spirits","",0,false],["Kosciuszko Beer","Beer","Beer/Spirits","",0,false],["Carlton Draught 375ml","Beer","Beer/Spirits","",0,false],["Carlton Dry 375ml","Beer","Beer/Spirits","",0,false],["Coopers Light 355ml","Beer","Beer/Spirits","",2.00,false],["Heaps Normal Quiet XPA","Beer","Beer/Spirits","",1.59,false],
+  ["Coke No Sugar 330ml","Soft Drink","Complimentary","",2.08,true],["Fanta 330ml","Soft Drink","Complimentary","",2.08,true],["Sprite 330ml","Soft Drink","Complimentary","",2.08,true],["Coca Cola 330ml","Soft Drink","Complimentary","",2.08,true],["Coke No Sugar 1.25L","Soft Drink","Complimentary","",2.85,true],["Fanta 1.25L","Soft Drink","Complimentary","",2.85,true],["Sprite 1.25L","Soft Drink","Complimentary","",2.85,true],["Coca Cola Classic 1.25L","Soft Drink","Complimentary","",2.85,true],["Yaru Sparkling Water 500ml","Water","Complimentary","",2.60,true],["Yaru Still Mineral Water 300ml","Water","Complimentary","",2.60,true],["Yaru Sparkling Water 300ml","Water","Complimentary","",2.60,true],["Fevertree Mediterranean Tonic 500ml","Soft Drink","Complimentary","",2.21,true],["Fevertree Elderflower Tonic 500ml","Soft Drink","Complimentary","",2.21,true],["San Pellegrino 750ml","Water","Complimentary","",2.21,true],["Ozharvest Strawberry Lemonade","Soft Drink","Complimentary","",3.50,true],["Ozharvest Lemonade Original Cans","Soft Drink","Complimentary","",3.50,true],["Kakadu Conscious Drink Sparkling Rose NA","Soft Drink","Complimentary","",25.00,true],["Red Bull Energy Drinks","Soft Drink","Complimentary","",0,true],
+  ["Noah Orange Juice","Juice","Complimentary","",2.85,true],["Noah Apple Juice","Juice","Complimentary","",2.85,true],["Noah Carrot Apple Ginger Veggie","Juice","Complimentary","",2.85,true],["Noah Green Juice","Juice","Complimentary","",2.85,true],
+  ["Aperol 700ml","Spirit","Beer/Spirits","",78.37,false],["Campari 700ml","Spirit","Beer/Spirits","",49.00,false],["Four Pillars Gin 700ml","Spirit","Beer/Spirits","",82.00,false],["Four Pillars Yuzu Gin 700ml","Spirit","Beer/Spirits","",67.00,false],["Artisan Settlers Yuzu Gin 700ml","Spirit","Beer/Spirits","",85.00,false],["Weis Zwetschgen Plum Brandy","Spirit","Beer/Spirits","",66.99,false],["Brookies Byron Bay Dry Gin 700ml","Spirit","Beer/Spirits","",81.00,false],["Ink Gin 700ml","Spirit","Beer/Spirits","",84.00,false],["Tanqueray Gin 700ml","Spirit","Beer/Spirits","",59.00,false],["23rd St Gin","Spirit","Beer/Spirits","",66.00,false],["Monin Green Apple Syrup 700ml","Mixer","Beer/Spirits","",22.38,false],["Bickfords Raspberry Cordial 750ml","Mixer","Beer/Spirits","",4.83,false],["Rubia Strawberry Liqueur 700ml","Mixer","Beer/Spirits","",45.00,false],["Crawseys Grenadine 750ml","Mixer","Beer/Spirits","",16.99,false],["Angostura Bitters 200ml","Mixer","Beer/Spirits","",32.00,false],["Cruz Madere 2L","Spirit","Beer/Spirits","",0,false]
+];
+
+function supFor(n){ var l=(n||'').toLowerCase(); if(l.includes('noah'))return'Noah Juices'; if(l.includes('young henry'))return"Young Henry's"; return'Sydney Wines'; }
+function ctn(i){ var n=(i.name||'').toLowerCase(),c=i.category; if(c==='Beer')return{q:24,l:'24 cans/carton'}; if(c==='Soft Drink')return n.includes('1.25')?{q:12,l:'12x1.25L/carton'}:{q:24,l:'24x330ml/carton'}; if(c==='Water')return(n.includes('750')||n.includes('500'))?{q:12,l:'12 bottles/carton'}:{q:24,l:'24x300ml/carton'}; if(c==='Juice')return{q:12,l:'12 bottles/carton'}; if(c==='Non-Alc Cocktail')return{q:24,l:'24 cans/carton'}; if(c==='Spirit'||c==='Mixer')return{q:1,l:'per bottle'}; return{q:12,l:'12 bottles/carton'}; }
+
+async function seedItems(){
   try{
-    const {count,error}=await sb.from('items').select('*',{count:'exact',head:true});
-    if(error){toast('DB error: '+error.message,true);return;}
-    if(count>0){await fetchItems();return;}
-    const rows=SEED_ITEMS.map(([name,category,price_tier,vintage,luc,is_complimentary])=>({
-      name,category,price_tier,vintage,supplier:getSupplierName(name),
-      luc,is_complimentary,opening_soh:0,orders_in:0,consumed:0
-    }));
-    for(let i=0;i<rows.length;i+=50){
-      const {error:e}=await sb.from('items').insert(rows.slice(i,i+50));
-      if(e){toast('Seed error: '+e.message,true);return;}
-    }
+    var r=await sb.from('items').select('*',{count:'exact',head:true});
+    if(r.error){toast('DB error: '+r.error.message,true);return;}
+    if(r.count>0){await fetchItems();return;}
+    var rows=SEED.map(function(s){return{name:s[0],category:s[1],price_tier:s[2],vintage:s[3],supplier:supFor(s[0]),luc:s[4],is_complimentary:s[5],opening_soh:0,orders_in:0,consumed:0};});
+    for(var i=0;i<rows.length;i+=50){var e=await sb.from('items').insert(rows.slice(i,i+50));if(e.error){toast('Seed error: '+e.error.message,true);return;}}
     await fetchItems();
     toast('✅ '+items.length+' items loaded!');
-  }catch(e){toast('Init error: '+e.message,true);}
+  }catch(ex){toast('Error: '+ex.message,true);}
 }
 
 async function fetchItems(){
-  const {data,error}=await sb.from('items').select('*').order('category').order('name');
-  if(error){toast('Fetch error: '+error.message,true);return;}
-  items=(data||[]).map(i=>({...i,_supplier:getSupplierName(i.name)}));
+  var r=await sb.from('items').select('*').order('category').order('name');
+  if(r.error){toast('Fetch error: '+r.error.message,true);return;}
+  items=(r.data||[]).map(function(i){return Object.assign({},i,{_sup:supFor(i.name)});});
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
-async function loadDashboard(){
+async function loadDash(){
   await fetchItems();
-  const totalValue=items.reduce((s,i)=>s+Math.max(0,soh(i))*i.luc,0);
-  const inStock=items.filter(i=>soh(i)>0).length;
-  const low=items.filter(i=>soh(i)>0&&soh(i)<=3).length;
-  const out=items.filter(i=>soh(i)<=0).length;
-  $('m-value').textContent=fmt(totalValue);
-  $('m-instock').textContent=inStock;
-  $('m-low').textContent=low;
-  $('m-out').textContent=out;
-
-  const alertItems=items.filter(i=>soh(i)<=3).sort((a,b)=>soh(a)-soh(b));
-  $('dash-alerts').innerHTML=alertItems.length
-    ?alertItems.map(i=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)"><div><div style="font-size:12px;font-weight:600;color:var(--white)">${i.name}</div><div style="font-size:11px;color:var(--muted)">${i.category} · ${i._supplier}</div></div>${statusBadge(i)}</div>`).join('')
-    :'<div class="empty">✅ All items sufficiently stocked</div>';
-
-  const cats={};
-  items.forEach(i=>{cats[i.category]=(cats[i.category]||0)+Math.max(0,soh(i))*i.luc;});
-  const labels=Object.keys(cats).filter(k=>cats[k]>0);
-  const colors=['#e94560','#f39c12','#27ae60','#2980b9','#8e44ad','#e67e22','#1abc9c','#34495e','#c0392b','#16a085','#d35400'];
-  if(chartInstance) chartInstance.destroy();
-  chartInstance=new Chart($('chart-cat').getContext('2d'),{
-    type:'doughnut',
-    data:{labels,datasets:[{data:labels.map(k=>cats[k]),backgroundColor:colors.slice(0,labels.length),borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8892a4',font:{size:11},boxWidth:12}}}}
-  });
-
-  const [{data:recentOrders},{data:recentEvents}]=await Promise.all([
-    sb.from('orders').select('*').order('created_at',{ascending:false}).limit(5),
-    sb.from('events').select('*').order('created_at',{ascending:false}).limit(5),
-  ]);
-  const combined=[
-    ...(recentOrders||[]).map(o=>({type:'order',date:o.order_date,by:o.ordered_by,label:'Order submitted',created:o.created_at})),
-    ...(recentEvents||[]).map(e=>({type:'event',date:e.event_date,by:e.recorded_by,label:e.event_name,created:e.created_at})),
-  ].sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,8);
-  $('dash-activity').innerHTML=combined.length
-    ?combined.map(a=>`<div class="history-item"><div class="history-dot ${a.type}"></div><div><div style="font-size:13px;font-weight:500">${a.label}</div><div class="history-meta">${a.type==='order'?'🛒 Order':'📋 Consumption'} · ${a.date} · ${a.by||'—'}</div></div></div>`).join('')
-    :'<div class="empty">No activity yet.</div>';
+  var tv=items.reduce(function(s,i){return s+Math.max(0,soh(i))*i.luc;},0);
+  var ins=items.filter(function(i){return soh(i)>0;}).length;
+  var lo=items.filter(function(i){return soh(i)>0&&soh(i)<=3;}).length;
+  var ou=items.filter(function(i){return soh(i)<=0;}).length;
+  G('mv').textContent=fmt(tv); G('mis').textContent=ins; G('mlo').textContent=lo; G('mout').textContent=ou;
+  var al=items.filter(function(i){return soh(i)<=3;}).sort(function(a,b){return soh(a)-soh(b);});
+  G('dalerts').innerHTML=al.length?al.map(function(i){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--bdr)"><div><div style="font-size:12px;font-weight:600;color:var(--wht)">'+i.name+'</div><div style="font-size:11px;color:var(--mut)">'+i.category+' · '+i._sup+'</div></div>'+sbadge(i)+'</div>';}).join(''):'<div class="empty">✅ All items sufficiently stocked</div>';
+  var cats={};
+  items.forEach(function(i){cats[i.category]=(cats[i.category]||0)+Math.max(0,soh(i))*i.luc;});
+  var lb=Object.keys(cats).filter(function(k){return cats[k]>0;});
+  var vl=lb.map(function(k){return cats[k];});
+  var co=['#e94560','#f39c12','#27ae60','#2980b9','#8e44ad','#e67e22','#1abc9c','#34495e','#c0392b','#16a085','#d35400'];
+  if(chart) chart.destroy();
+  chart=new Chart(G('chcat').getContext('2d'),{type:'doughnut',data:{labels:lb,datasets:[{data:vl,backgroundColor:co.slice(0,lb.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8892a4',font:{size:11},boxWidth:12}}}}});
+  var ra=await sb.from('orders').select('*').order('created_at',{ascending:false}).limit(5);
+  var rb=await sb.from('events').select('*').order('created_at',{ascending:false}).limit(5);
+  var com=[].concat((ra.data||[]).map(function(o){return{type:'order',date:o.order_date,by:o.ordered_by,lbl:'Order submitted',cr:o.created_at};}),(rb.data||[]).map(function(e){return{type:'event',date:e.event_date,by:e.recorded_by,lbl:e.event_name,cr:e.created_at};})).sort(function(a,b){return new Date(b.cr)-new Date(a.cr);}).slice(0,8);
+  G('dact').innerHTML=com.length?com.map(function(a){return'<div class="hi"><div class="hd '+a.type+'"></div><div><div style="font-size:13px;font-weight:500">'+a.lbl+'</div><div class="hm">'+(a.type==='order'?'🛒 Order':'📋 Consumption')+' · '+a.date+' · '+(a.by||'—')+'</div></div></div>';}).join(''):'<div class="empty">No activity yet.</div>';
 }
 
 // ── INVENTORY ─────────────────────────────────────────────────
-const INV_LAYOUT=[
-  {section:'LUXE',color:'#9a7a1f',tier:'Luxe $65+',groups:[{label:'Champagne & Sparkling',cats:['Champagne','Sparkling']},{label:'White Wine',cats:['White']},{label:'Red Wine',cats:['Red']}]},
-  {section:'CLIENT',color:'#1a5276',tier:'Client $30-65',groups:[{label:'Champagne & Sparkling',cats:['Champagne','Sparkling']},{label:'White Wine',cats:['White']},{label:'Rosé',cats:['Rose']},{label:'Red Wine',cats:['Red']}]},
-  {section:'STAFF',color:'#1e6b40',tier:'Staff <$30',groups:[{label:'Sparkling',cats:['Sparkling']},{label:'White Wine',cats:['White']},{label:'Rosé',cats:['Rose']},{label:'Red Wine',cats:['Red']},{label:'Dessert Wine',cats:['Dessert Wine']}]},
-  {section:'NON-ALCOHOLIC',color:'#6c3483',tier:'Non-Alc',groups:[{label:'Non-Alc Wine',cats:['Non-Alc Wine']},{label:'Non-Alc Cocktails',cats:['Non-Alc Cocktail']}]},
-  {section:'BEER',color:'#935116',tier:null,groups:[{label:null,cats:['Beer']}]},
-  {section:'SOFT DRINKS',color:'#154360',tier:null,groups:[{label:'1.25L Bottles',cats:['Soft Drink'],filter:i=>i.name.toLowerCase().includes('1.25')},{label:'330ml Cans',cats:['Soft Drink'],filter:i=>!i.name.toLowerCase().includes('1.25')},{label:'Water',cats:['Water']}]},
-  {section:'JUICES',color:'#1d6a35',tier:null,groups:[{label:null,cats:['Juice']}]},
-  {section:'SPIRITS & MIXERS',color:'#7b241c',tier:null,groups:[{label:'Spirits',cats:['Spirit']},{label:'Mixers',cats:['Mixer']}]},
+var ILAYOUT=[
+  {s:'LUXE',c:'#9a7a1f',t:'Luxe $65+',g:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Red Wine',c:['Red']}]},
+  {s:'CLIENT',c:'#1a5276',t:'Client $30-65',g:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Rosé',c:['Rose']},{l:'Red Wine',c:['Red']}]},
+  {s:'STAFF',c:'#1e6b40',t:'Staff <$30',g:[{l:'Sparkling',c:['Sparkling']},{l:'White Wine',c:['White']},{l:'Rosé',c:['Rose']},{l:'Red Wine',c:['Red']},{l:'Dessert Wine',c:['Dessert Wine']}]},
+  {s:'NON-ALCOHOLIC',c:'#6c3483',t:'Non-Alc',g:[{l:'Non-Alc Wine',c:['Non-Alc Wine']},{l:'Non-Alc Cocktails',c:['Non-Alc Cocktail']}]},
+  {s:'BEER',c:'#935116',t:null,g:[{l:null,c:['Beer']}]},
+  {s:'SOFT DRINKS',c:'#154360',t:null,g:[{l:'1.25L Bottles',c:['Soft Drink'],f:function(i){return i.name.toLowerCase().includes('1.25');}},{l:'330ml Cans',c:['Soft Drink'],f:function(i){return !i.name.toLowerCase().includes('1.25');}},{l:'Water',c:['Water']}]},
+  {s:'JUICES',c:'#1d6a35',t:null,g:[{l:null,c:['Juice']}]},
+  {s:'SPIRITS & MIXERS',c:'#7b241c',t:null,g:[{l:'Spirits',c:['Spirit']},{l:'Mixers',c:['Mixer']}]}
 ];
 
-function loadInventory(){ renderInventory(); }
-
-function renderInventory(){
-  const el=$('inv-body');
-  const search=($('inv-search')||{value:''}).value.toLowerCase();
-  const statusF=($('inv-filter-status')||{value:''}).value;
-  function pass(i){ const s=soh(i); if(search&&!i.name.toLowerCase().includes(search))return false; if(statusF==='ok'&&s<=3)return false; if(statusF==='low'&&!(s>0&&s<=3))return false; if(statusF==='out'&&s>0)return false; return true; }
-  function makeRow(i){ const s=soh(i);const sc=s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)';const vt=i.vintage?'<span style="font-size:11px;color:var(--muted);margin-left:6px">'+i.vintage+'</span>':'';return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 16px;font-weight:500">'+i.name+vt+'</td><td style="padding:10px 16px;font-size:12px;color:var(--muted)">'+(i._supplier||'—')+'</td><td style="padding:10px 16px;text-align:center;font-weight:700;font-size:16px;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 16px;text-align:center">'+statusBadge(i)+'</td><td style="padding:10px 16px;text-align:right"><button class="btn btn-outline btn-sm" onclick="openEditModal('+i.id+')">Edit SOH</button></td></tr>'; }
-  function makeTable(rows){ return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface2)"><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;width:50%">Item</th><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">Supplier</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">SOH</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }
-  let html='',any=false;
-  INV_LAYOUT.forEach(function(sec){ let secBody=''; sec.groups.forEach(function(grp){ var grpItems=items.filter(function(i){ if(sec.tier&&i.price_tier!==sec.tier)return false; if(!grp.cats.includes(i.category))return false; if(grp.filter&&!grp.filter(i))return false; return pass(i); }); if(!grpItems.length)return; any=true; if(grp.label)secBody+='<div style="padding:9px 18px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--border);background:rgba(255,255,255,0.015)">— '+grp.label+' —</div>'; secBody+=makeTable(grpItems.map(makeRow).join('')); }); if(!secBody)return; html+='<div style="margin-bottom:22px;border-radius:10px;overflow:hidden;border:1px solid var(--border)"><div style="background:'+sec.color+';padding:12px 20px;display:flex;align-items:center;gap:12px"><span style="font-weight:800;font-size:14px;color:#fff;letter-spacing:1.5px">'+sec.section+'</span>'+(sec.tier?'<span style="font-size:11px;color:rgba(255,255,255,0.65)">'+sec.tier+'</span>':'')+'</div>'+secBody+'</div>'; });
+function renderInv(){
+  var el=G('ibody');
+  var sr=(G('isrch')||{value:''}).value.toLowerCase();
+  var sf=(G('istat')||{value:''}).value;
+  function pass(i){var s=soh(i);if(sr&&!i.name.toLowerCase().includes(sr))return false;if(sf==='ok'&&s<=3)return false;if(sf==='low'&&!(s>0&&s<=3))return false;if(sf==='out'&&s>0)return false;return true;}
+  function row(i){var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';return'<tr style="border-bottom:1px solid var(--bdr)"><td style="padding:10px 16px;font-weight:500">'+i.name+vt+'</td><td style="padding:10px 16px;font-size:12px;color:var(--mut)">'+(i._sup||'—')+'</td><td style="padding:10px 16px;text-align:center;font-weight:700;font-size:16px;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 16px;text-align:center">'+sbadge(i)+'</td><td style="padding:10px 16px;text-align:right"><button class="btn bo bsm" onclick="openEdit('+i.id+')">Edit SOH</button></td></tr>';}
+  function tbl(rows){return'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sur2)"><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;width:50%">Item</th><th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Supplier</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">SOH</th><th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
+  var html='',any=false;
+  ILAYOUT.forEach(function(sec){
+    var sb='';
+    sec.g.forEach(function(grp){
+      var gi=items.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;if(!grp.c.includes(i.category))return false;if(grp.f&&!grp.f(i))return false;return pass(i);});
+      if(!gi.length)return; any=true;
+      if(grp.l) sb+='<div style="padding:9px 18px 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--bdr);background:rgba(255,255,255,.015)">— '+grp.l+' —</div>';
+      sb+=tbl(gi.map(row).join(''));
+    });
+    if(!sb)return;
+    html+='<div style="margin-bottom:22px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)"><div style="background:'+sec.c+';padding:12px 20px;display:flex;align-items:center;gap:12px"><span style="font-weight:800;font-size:14px;color:#fff;letter-spacing:1.5px">'+sec.s+'</span>'+(sec.t?'<span style="font-size:11px;color:rgba(255,255,255,.65)">'+sec.t+'</span>':'')+'</div>'+sb+'</div>';
+  });
   el.innerHTML=any?html:'<div class="empty">No items match your search.</div>';
 }
 
-function openEditModal(id){
-  const item=items.find(i=>i.id===id); if(!item)return;
-  $('edit-item-name').textContent=item.name; $('edit-item-id').value=id;
-  $('edit-opening').value=Math.round(item.opening_soh||0); $('edit-current').value=Math.round(soh(item));
-  $('edit-supplier').value=item.supplier||''; $('edit-luc').value=item.luc;
-  $('modal-edit').classList.add('open');
+function openEdit(id){
+  var i=items.find(function(x){return x.id===id;}); if(!i)return;
+  G('eitn').textContent=i.name; G('eid').value=id;
+  G('eop').value=Math.round(i.opening_soh||0); G('ecur').value=Math.round(soh(i));
+  G('esupf').value=i.supplier||''; G('eluc').value=i.luc;
+  openMo('medit');
 }
 
-$('save-edit-btn').addEventListener('click', async()=>{
-  const id=parseInt($('edit-item-id').value), item=items.find(i=>i.id===id);
-  const opening=parseFloat($('edit-opening').value)||0;
-  const currentOverride=parseFloat($('edit-current').value)||0;
-  const consumed=Math.max(0,(opening+(item.orders_in||0))-currentOverride);
-  const {error}=await sb.from('items').update({opening_soh:opening,consumed,supplier:$('edit-supplier').value,luc:parseFloat($('edit-luc').value)||0}).eq('id',id);
-  if(error){toast('Error: '+error.message,true);return;}
-  await fetchItems(); renderInventory(); $('modal-edit').classList.remove('open'); toast('✅ Item updated');
+G('saveedit').addEventListener('click', async function(){
+  var id=parseInt(G('eid').value),i=items.find(function(x){return x.id===id;});
+  var op=parseFloat(G('eop').value)||0,cu=parseFloat(G('ecur').value)||0;
+  var con=Math.max(0,(op+(i.orders_in||0))-cu);
+  var r=await sb.from('items').update({opening_soh:op,consumed:con,supplier:G('esupf').value,luc:parseFloat(G('eluc').value)||0}).eq('id',id);
+  if(r.error){toast('Error: '+r.error.message,true);return;}
+  await fetchItems(); renderInv(); closeMo('medit'); toast('✅ Item updated');
 });
 
 // ── ORDERS ───────────────────────────────────────────────────
-function loadOrderForm(){ $('ord-date').value=today(); $('ord-by').value=$('current-user').value||''; showStep1(); }
+var SUPS=[
+  {k:'Sydney Wines',ct:'Antony',em:'antony@sydneywine.com.au',ic:'🍷',col:'#1a5276',ds:'Wines · Beer · Soft Drinks · Spirits'},
+  {k:'Noah Juices',ct:'Mark',em:'orders@baco.com.au',ic:'🥤',col:'#1e6b40',ds:'Orange · Apple · Carrot Ginger · Green'},
+  {k:"Young Henry's",ct:'Ben Stockton',em:'stocko@younghenrys.com',ic:'🍺',col:'#7d5a00',ds:'Young Henry Newtowner 330ml'}
+];
 
-function showStep1(){
-  $('ord-step1').style.display='block'; $('ord-step2').style.display='none';
-  activeSupplier=null; renderSupplierCards();
-}
+function loadOrders(){ G('odate').value=td(); G('oby').value=G('usel').value||''; showOS1(); }
+function showOS1(){ G('os1').style.display='block'; G('os2').style.display='none'; activeSup=null; renderSCards(); }
 
-function renderSupplierCards(){
-  const cardData=[
-    {key:'Sydney Wines',contact:'Antony',email:'antony@sydneywine.com.au',icon:'🍷',color:'#1a5276',desc:'Wines · Champagne · Sparkling · Beer · Soft Drinks · Spirits · Mixers'},
-    {key:'Noah Juices',contact:'Mark',email:'orders@baco.com.au',icon:'🥤',color:'#1e6b40',desc:'Orange · Apple · Carrot Apple Ginger · Green Juice'},
-    {key:"Young Henry's",contact:'Ben Stockton',email:'stocko@younghenrys.com',icon:'🍺',color:'#7d5a00',desc:'Young Henry Newtowner 330ml'},
-  ];
-  window._supCards=cardData;
-  $('supplier-cards').innerHTML=cardData.map((sup,idx)=>{
-    const supItems=items.filter(i=>i._supplier===sup.key);
-    const inStock=supItems.filter(i=>soh(i)>0).length;
-    const outCount=supItems.filter(i=>soh(i)<=0).length;
-    return `<div onclick="selectSupplier(${idx})" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${sup.color}';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
-      <div style="background:${sup.color};padding:16px 20px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:28px">${sup.icon}</span>
-        <div><div style="font-weight:800;font-size:15px;color:#fff">${sup.key}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${sup.contact} · ${sup.email}</div></div>
-      </div>
-      <div style="padding:14px 20px">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${sup.desc}</div>
-        <div style="display:flex;gap:10px">
-          <span style="font-size:11px;background:rgba(39,174,96,.12);color:#27ae60;padding:3px 10px;border-radius:20px;font-weight:600">${inStock} in stock</span>
-          ${outCount>0?`<span style="font-size:11px;background:rgba(233,69,96,.12);color:#e94560;padding:3px 10px;border-radius:20px;font-weight:600">${outCount} out of stock</span>`:''}
-        </div>
-      </div>
-      <div style="padding:10px 20px 14px"><div style="background:${sup.color};color:#fff;text-align:center;border-radius:7px;padding:9px;font-size:13px;font-weight:700">Place Order →</div></div>
-    </div>`;
+function renderSCards(){
+  G('scards').innerHTML=SUPS.map(function(s,idx){
+    var si=items.filter(function(i){return i._sup===s.k;});
+    var ins=si.filter(function(i){return soh(i)>0;}).length;
+    var out=si.filter(function(i){return soh(i)<=0;}).length;
+    return'<div onclick="pickSup('+idx+')" style="background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor=\''+s.col+'\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--bdr)\';this.style.transform=\'none\'"><div style="background:'+s.col+';padding:16px 20px;display:flex;align-items:center;gap:12px"><span style="font-size:28px">'+s.ic+'</span><div><div style="font-weight:800;font-size:15px;color:#fff">'+s.k+'</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">'+s.ct+' · '+s.em+'</div></div></div><div style="padding:14px 20px"><div style="font-size:12px;color:var(--mut);margin-bottom:10px">'+s.ds+'</div><div style="display:flex;gap:10px"><span style="font-size:11px;background:rgba(39,174,96,.12);color:#27ae60;padding:3px 10px;border-radius:20px;font-weight:600">'+ins+' in stock</span>'+(out>0?'<span style="font-size:11px;background:rgba(233,69,96,.12);color:#e94560;padding:3px 10px;border-radius:20px;font-weight:600">'+out+' out</span>':'')+'</div></div><div style="padding:10px 20px 14px"><div style="background:'+s.col+';color:#fff;text-align:center;border-radius:7px;padding:9px;font-size:13px;font-weight:700">Place Order →</div></div></div>';
   }).join('');
 }
 
-function selectSupplier(idx){
-  const sup=window._supCards[idx]; activeSupplier=sup.key;
-  $('ord-step1').style.display='none'; $('ord-step2').style.display='block';
-  $('ord-sup-name').textContent=sup.key; $('ord-sup-meta').textContent=sup.contact+' · '+sup.email;
-  renderOrderItems(); updateOrderTotal();
+function pickSup(idx){
+  var s=SUPS[idx]; activeSup=s.k;
+  G('os1').style.display='none'; G('os2').style.display='block';
+  G('osupn').textContent=s.k; G('osupm').textContent=s.ct+' · '+s.em;
+  renderOItems(); updateOTotal();
 }
 
-function renderOrderItems(){
-  const supItems=items.filter(i=>i._supplier===activeSupplier);
-  const groups={};
-  supItems.forEach(i=>{
-    let g=i.category;
+function renderOItems(){
+  var si=items.filter(function(i){return i._sup===activeSup;});
+  var grps={};
+  si.forEach(function(i){
+    var g=i.category;
     if(g==='Soft Drink') g=i.name.toLowerCase().includes('1.25')?'Soft Drink 1.25L':'Soft Drink 330ml';
-    if(!groups[g]) groups[g]=[];
-    groups[g].push(i);
+    if(!grps[g]) grps[g]=[];
+    grps[g].push(i);
   });
-  const order=['Champagne','Sparkling','White','Rose','Red','Dessert Wine','Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink 1.25L','Soft Drink 330ml','Water','Juice','Spirit','Mixer'];
-  const sorted=Object.keys(groups).sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b)));
-  $('ord-item-groups').innerHTML=sorted.map(grp=>{
-    const grpItems=groups[grp];
-    const rows=grpItems.map(i=>{
-      const s=soh(i),cs=cartonSize(i);
-      const sc=s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)';
-      const vt=i.vintage?' <span style="color:var(--muted);font-size:11px">'+i.vintage+'</span>':'';
-      return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:10px 14px;font-weight:500">${i.name}${vt}</td>
-        <td style="padding:10px 14px;text-align:center;font-weight:700;color:${sc}">${Math.max(0,Math.round(s))}</td>
-        <td style="padding:10px 14px;font-size:11px;color:var(--muted);text-align:center">${cs.label}</td>
-        <td style="padding:10px 14px;text-align:center;background:rgba(243,156,18,.04)">
-          <input type="number" id="qty-ord-${i.id}" min="0" step="1" placeholder="0"
-            style="width:64px;background:var(--surface);border:1.5px solid var(--border);color:var(--white);border-radius:6px;padding:6px 8px;font-size:14px;font-weight:700;text-align:center"
-            oninput="updateOrderTotal()" onchange="updateOrderTotal()"
-            onfocus="this.style.borderColor='#f39c12'" onblur="this.style.borderColor='var(--border)'">
-        </td>
-        <td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--muted)" id="line-${i.id}">—</td>
-      </tr>`;
+  var ord=['Champagne','Sparkling','White','Rose','Red','Dessert Wine','Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink 1.25L','Soft Drink 330ml','Water','Juice','Spirit','Mixer'];
+  var srt=Object.keys(grps).sort(function(a,b){return(ord.indexOf(a)<0?99:ord.indexOf(a))-(ord.indexOf(b)<0?99:ord.indexOf(b));});
+  G('ogrps').innerHTML=srt.map(function(g){
+    var gi=grps[g];
+    var rows=gi.map(function(i){
+      var s=soh(i),cs=ctn(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
+      return'<tr style="border-bottom:1px solid var(--bdr)"><td style="padding:10px 14px;font-weight:500">'+i.name+vt+'</td><td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 14px;font-size:11px;color:var(--mut);text-align:center">'+cs.l+'</td><td style="padding:10px 14px;text-align:center;background:rgba(243,156,18,.04)"><input type="number" id="qo'+i.id+'" min="0" step="1" placeholder="0" style="width:64px;background:var(--sur);border:1.5px solid var(--bdr);color:var(--wht);border-radius:6px;padding:6px 8px;font-size:14px;font-weight:700;text-align:center" oninput="updateOTotal()" onchange="updateOTotal()" onfocus="this.style.borderColor=\'#f39c12\'" onblur="this.style.borderColor=\'var(--bdr)\'"></td><td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--mut)" id="ql'+i.id+'">—</td></tr>';
     }).join('');
-    return `<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
-      <div style="background:var(--surface2);padding:9px 16px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between">
-        <span>${grp}</span><span style="color:var(--border);font-weight:400">${grpItems.length} item${grpItems.length!==1?'s':''}</span>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="background:rgba(255,255,255,.02)">
-          <th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--muted)">Item</th>
-          <th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--muted)">SOH</th>
-          <th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--muted)">Carton</th>
-          <th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty to Order</th>
-          <th style="padding:7px 14px;text-align:right;font-size:10px;color:var(--muted)">Est. Cost</th>
-        </tr></thead><tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    return'<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)"><div style="background:var(--sur2);padding:9px 16px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between"><span>'+g+'</span><span style="font-weight:400">'+gi.length+' item'+(gi.length!==1?'s':'')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Carton</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty</th><th style="padding:7px 14px;text-align:right;font-size:10px;color:var(--mut)">Est. Cost</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
 }
 
-function updateOrderTotal(){
-  let total=0;
-  items.forEach(i=>{
-    const el=document.getElementById('qty-ord-'+i.id); if(!el)return;
-    const cartons=parseFloat(el.value)||0;
-    const line=cartons*cartonSize(i).qty*i.luc; total+=line;
-    const lineEl=document.getElementById('line-'+i.id);
-    if(lineEl) lineEl.textContent=cartons>0?fmt(line):'—';
-    if(cartons>0) el.style.borderColor='#f39c12';
+function updateOTotal(){
+  var tot=0;
+  items.forEach(function(i){
+    var el=document.getElementById('qo'+i.id); if(!el)return;
+    var c=parseFloat(el.value)||0,line=c*ctn(i).q*i.luc; tot+=line;
+    var le=document.getElementById('ql'+i.id); if(le) le.textContent=c>0?fmt(line):'—';
+    if(c>0) el.style.borderColor='#f39c12';
   });
-  const label='Est. total: '+fmt(total);
-  $('ord-total-label').textContent=label; $('ord-total-bottom').textContent='Estimated total: '+fmt(total);
+  var lb='Est. total: '+fmt(tot);
+  G('ototl').textContent=lb; G('ototb').textContent=lb;
 }
 
-$('submit-order-btn').addEventListener('click',()=>{
-  const date=$('ord-date').value, by=$('ord-by').value.trim(), notes=$('ord-notes').value.trim();
+G('subord').addEventListener('click', function(){
+  var date=G('odate').value,by=G('oby').value.trim(),notes=G('onotes').value.trim();
   if(!date||!by){toast('Please enter order date and your name',true);return;}
-  if(!activeSupplier){toast('No supplier selected',true);return;}
-  const lines=[];
-  items.forEach(i=>{
-    const el=document.getElementById('qty-ord-'+i.id); if(!el)return;
-    const cartons=parseFloat(el.value)||0;
-    if(cartons>0) lines.push({item:i,cartons,units:cartons*cartonSize(i).qty});
-  });
+  if(!activeSup){toast('No supplier selected',true);return;}
+  var lines=[];
+  items.forEach(function(i){var el=document.getElementById('qo'+i.id);if(!el)return;var c=parseFloat(el.value)||0;if(c>0)lines.push({item:i,cartons:c,units:c*ctn(i).q});});
   if(!lines.length){toast('No quantities entered',true);return;}
-  pendingOrder={date,by,notes,lines,supplier:activeSupplier};
-  buildEmailModal(activeSupplier,lines,date,by,notes);
-  $('modal-email').classList.add('open');
+  pending={date:date,by:by,notes:notes,lines:lines,sup:activeSup};
+  showEmailPreview();
+  openMo('memail');
 });
 
-function buildEmailModal(sup,lines,date,by,notes){
-  const info=SUPPLIERS[sup]||{contact:sup,email:''};
-  const grouped={};
-  lines.forEach(l=>{const c=l.item.category;if(!grouped[c])grouped[c]=[];grouped[c].push(l);});
-  let body='Hi '+info.contact+',
-
-Can we please have the following delivered to us next week:
-';
-  if(notes) body+='
-Note: '+notes+'
-';
-  body+='
-';
-  Object.entries(grouped).forEach(([cat,catLines])=>{
-    body+=cat+':
-';
-    catLines.forEach(l=>{body+='  '+l.cartons+' x carton'+(l.cartons!==1?'s':'')+' — '+l.item.name+' ('+l.units+' units)
-';});
-    body+='
-';
+function showEmailPreview(){
+  var sup=SUPS.find(function(s){return s.k===pending.sup;})||{ct:pending.sup,em:''};
+  var grouped={};
+  pending.lines.forEach(function(l){var c=l.item.category;if(!grouped[c])grouped[c]=[];grouped[c].push(l);});
+  var body='Hi '+sup.ct+',\n\nCan we please have the following delivered to us next week:\n';
+  if(pending.notes) body+='\nNote: '+pending.notes+'\n';
+  body+='\n';
+  Object.keys(grouped).forEach(function(cat){
+    body+=cat+':\n';
+    grouped[cat].forEach(function(l){body+='  '+l.cartons+' x carton'+(l.cartons!==1?'s':'')+' — '+l.item.name+' ('+l.units+' units)\n';});
+    body+='\n';
   });
-  const sub=lines.reduce((s,l)=>s+l.units*l.item.luc,0);
-  if(sub>0) body+='Estimated subtotal: '+fmt(sub)+'
-
-';
-  body+='Many thanks,
-'+by+'
-PwC Sydney';
-  $('email-tabs').innerHTML='';
-  $('email-preview-text').textContent=body;
-  $('modal-email-title').textContent='📧 Order Email — '+sup;
-  $('modal-email-footer').innerHTML='<button class="btn btn-outline" id="copy-email-btn">📋 Copy Email</button><button class="btn btn-outline" data-close="modal-email" onclick="this.closest('.modal-overlay').classList.remove('open')">Cancel</button><button class="btn btn-success" id="confirm-order-btn">✅ Confirm &amp; Update Inventory</button>';
-  $('copy-email-btn').onclick=copyEmail;
-  $('confirm-order-btn').onclick=submitOrder;
+  var sub=pending.lines.reduce(function(s,l){return s+l.units*l.item.luc;},0);
+  if(sub>0) body+='Estimated subtotal: '+fmt(sub)+'\n\n';
+  body+='Many thanks,\n'+pending.by+'\nPwC Sydney';
+  G('metitle').textContent='📧 Order Email — '+pending.sup;
+  G('mebody').innerHTML='<p style="color:var(--mut);font-size:12px;margin-bottom:14px">Copy this email and paste into Outlook. Then click <strong>Confirm & Update Inventory</strong>.</p><div style="background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:16px 20px;font-size:13px;line-height:1.9;white-space:pre-wrap;color:var(--txt);max-height:360px;overflow-y:auto" id="eprev">'+body+'</div>';
+  G('mefooter').innerHTML='<button class="btn bo" onclick="copyEmail()">📋 Copy Email</button><button class="btn bo" onclick="closeMo(\'memail\')">Cancel</button><button class="btn bs" onclick="confirmOrder()">✅ Confirm &amp; Update Inventory</button>';
 }
 
-async function copyEmail(){
-  const text=$('email-preview-text').textContent;
-  const plain=text.replace(/
-/g,'
-');
-  const html='<div style="font-family:Calibri,Arial,sans-serif;font-size:14px;line-height:1.7">'+text.split('
-').map(l=>l.trim()===''?'<br>':'<p style="margin:0">'+l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</p>').join('')+'</div>';
-  try{
-    await navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})})]);
-    toast('📋 Copied! Paste into Outlook.');
-  }catch(e){
-    try{await navigator.clipboard.writeText(plain);toast('📋 Copied!');}
-    catch(e2){const ta=document.createElement('textarea');ta.value=plain;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Copied!');}
-  }
+function copyEmail(){
+  var text=G('eprev')?G('eprev').textContent:'';
+  var plain=text.replace(/\n/g,'\r\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(plain).then(function(){toast('📋 Copied! Paste into Outlook.');}).catch(function(){fallbackCopy(plain);});
+  } else { fallbackCopy(plain); }
 }
+function fallbackCopy(text){var t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('📋 Copied!');}
 
-async function submitOrder(){
-  if(!pendingOrder)return;
-  const {date,by,notes,lines,supplier}=pendingOrder;
-  const btn=$('confirm-order-btn');
-  btn.disabled=true; btn.textContent='Saving…';
+async function confirmOrder(){
+  if(!pending)return;
+  var btn=G('mefooter').querySelector('.bs');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
   try{
-    const {data:order,error:oErr}=await sb.from('orders').insert({order_date:date,ordered_by:by,notes,status:'submitted'}).select().single();
-    if(oErr) throw new Error('Order save failed: '+oErr.message);
-    const {error:lErr}=await sb.from('order_lines').insert(lines.map(l=>({order_id:order.id,item_id:l.item.id,quantity:l.units,unit_cost:l.item.luc})));
-    if(lErr) throw new Error('Lines save failed: '+lErr.message);
-    for(const l of lines){ await sb.from('items').update({orders_in:(parseFloat(l.item.orders_in)||0)+l.units}).eq('id',l.item.id); }
-    await fetchItems(); loadOrderForm();
-    const ordId=order.id; pendingOrder=null;
-    $('modal-email-title').textContent='✅ Order Saved!';
-    $('modal-email-body').innerHTML='<div style="text-align:center;padding:24px 0"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px">Order confirmed &amp; inventory updated</div><div style="font-size:13px;color:var(--muted);margin-bottom:24px">'+lines.length+' item(s) · '+supplier+'</div><button class="btn btn-outline" onclick="printSingleOrder('+ordId+')" style="font-size:14px;padding:10px 24px">🖨️ Print this Order</button></div>';
-    $('modal-email-footer').innerHTML='<button class="btn btn-success" onclick="document.getElementById('modal-email').classList.remove('open')">Done</button>';
-  }catch(e){toast(e.message,true);}
-  finally{if(btn){btn.textContent='✅ Confirm & Update Inventory';btn.disabled=false;}}
+    var r1=await sb.from('orders').insert({order_date:pending.date,ordered_by:pending.by,notes:pending.notes,status:'submitted'}).select().single();
+    if(r1.error) throw new Error(r1.error.message);
+    var r2=await sb.from('order_lines').insert(pending.lines.map(function(l){return{order_id:r1.data.id,item_id:l.item.id,quantity:l.units,unit_cost:l.item.luc};}));
+    if(r2.error) throw new Error(r2.error.message);
+    for(var j=0;j<pending.lines.length;j++){var l=pending.lines[j];await sb.from('items').update({orders_in:(parseFloat(l.item.orders_in)||0)+l.units}).eq('id',l.item.id);}
+    await fetchItems(); loadOrders();
+    var oid=r1.data.id; pending=null;
+    G('metitle').textContent='✅ Order Saved!';
+    G('mebody').innerHTML='<div style="text-align:center;padding:24px 0"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:700;color:var(--wht);margin-bottom:6px">Order confirmed &amp; inventory updated</div><button class="btn bo" onclick="printOrd('+oid+')" style="margin-top:8px">🖨️ Print this Order</button></div>';
+    G('mefooter').innerHTML='<button class="btn bs" onclick="closeMo(\'memail\')">Done</button>';
+  }catch(ex){toast(ex.message,true);if(btn){btn.disabled=false;btn.textContent='✅ Confirm & Update Inventory';}}
 }
 
 // ── CONSUMPTION ───────────────────────────────────────────────
-const CON_CATS=[
-  ['🍾 Champagne & Sparkling',['Champagne','Sparkling']],
-  ['🥂 White Wine',['White']],
-  ['🌹 Rosé',['Rose']],
-  ['🍷 Red Wine',['Red']],
-  ['🍸 Non-Alc',['Non-Alc Wine','Non-Alc Cocktail','Dessert Wine']],
-  ['🍺 Beer',['Beer']],
-  ['🥤 Soft Drinks',['Soft Drink','Water']],
-  ['🧃 Juices',['Juice']],
-  ['🥃 Spirits & Mixers',['Spirit','Mixer']],
+var CCATS=[
+  ['🍾 Champagne & Sparkling',['Champagne','Sparkling']],['🥂 White Wine',['White']],['🌹 Rosé',['Rose']],
+  ['🍷 Red Wine',['Red']],['🍸 Non-Alc',['Non-Alc Wine','Non-Alc Cocktail','Dessert Wine']],
+  ['🍺 Beer',['Beer']],['🥤 Soft Drinks',['Soft Drink','Water']],['🧃 Juices',['Juice']],['🥃 Spirits & Mixers',['Spirit','Mixer']]
 ];
 
-function loadConsumptionForm(){ $('evt-date').value=today(); $('evt-by').value=$('current-user').value||''; showConStep1(); }
-function showConStep1(){ $('con-step1').style.display='block'; $('con-step2').style.display='none'; renderCatShortcuts(); }
+function loadCon(){ G('edate').value=td(); G('eby').value=G('usel').value||''; showCS1(); }
+function showCS1(){ G('cs1').style.display='block'; G('cs2').style.display='none'; renderShorts(); }
 
-function renderCatShortcuts(){
-  $('con-cat-shortcuts').innerHTML=CON_CATS.map(([label],idx)=>`<button onclick="jumpToCatIdx(${idx})" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${label}</button>`).join('');
+function renderShorts(){
+  G('cshorts').innerHTML=CCATS.map(function(c,i){return'<button onclick="jumpCat('+i+')" style="background:var(--sur);border:1px solid var(--bdr);border-radius:20px;padding:6px 14px;color:var(--txt);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor=\'var(--acc)\'" onmouseout="this.style.borderColor=\'var(--bdr)\'">'+c[0]+'</button>';}).join('');
 }
 
-function validateEvt(){
-  if(!$('evt-name').value.trim()||!$('evt-date').value||!$('evt-by').value.trim()){toast('Please fill in Function Name, Date and Recorded By',true);return false;} return true;
+function valEvt(){
+  if(!G('ename').value.trim()||!G('edate').value||!G('eby').value.trim()){toast('Please fill in Function Name, Date and Recorded By',true);return false;}return true;
 }
 
-function jumpToCatIdx(idx){ if(!validateEvt())return; goToConStep2(CON_CATS[idx][0]); }
+G('cnext').addEventListener('click',function(){if(!valEvt())return;goCS2(CCATS[0][0]);});
+function jumpCat(idx){if(!valEvt())return;goCS2(CCATS[idx][0]);}
 
-$('con-next-btn').addEventListener('click',()=>{ if(!validateEvt())return; goToConStep2(CON_CATS[0][0]); });
-
-function goToConStep2(initCat){
-  $('con-step1').style.display='none'; $('con-step2').style.display='block';
-  $('con-badge-title').textContent=$('evt-name').value;
-  const parts=[$('evt-date').value,($('evt-time')||{value:''}).value,($('evt-room')||{value:''}).value,($('evt-pax')||{value:''}).value?($('evt-pax').value+' pax'):'',($('evt-type')||{value:''}).value,$('evt-by').value];
-  $('con-badge-meta').textContent=parts.filter(Boolean).join(' · ');
-  renderConCatTabs(initCat); renderConGroup(initCat);
+function goCS2(initCat){
+  G('cs1').style.display='none'; G('cs2').style.display='block';
+  G('cbadget').textContent=G('ename').value;
+  var pts=[G('edate').value,G('etime').value,G('eroom').value,G('epax').value?G('epax').value+' pax':'',G('etype').value,G('eby').value];
+  G('cbadgem').textContent=pts.filter(Boolean).join(' · ');
+  renderCTabs(initCat); renderCGrp(initCat);
 }
 
-function renderConCatTabs(active){
-  activeConCat=active;
-  $('con-cat-tabs').innerHTML=CON_CATS.map(([label,cats],idx)=>{
-    const isActive=label===active;
-    const entered=items.filter(i=>cats.includes(i.category)).filter(i=>{const el=document.getElementById('qty-con-'+i.id);return el&&parseFloat(el.value)>0;}).length;
-    return `<button onclick="switchConCatIdx(${idx})" style="padding:7px 14px;border-radius:20px;border:1.5px solid ${isActive?'var(--accent)':'var(--border)'};background:${isActive?'var(--accent)':'var(--surface)'};color:${isActive?'#fff':'var(--muted)'};font-size:12px;font-weight:${isActive?700:500};cursor:pointer;font-family:inherit;transition:all .15s">${label}${entered>0?` <span style="background:var(--green);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px">${entered}</span>`:''}</button>`;
+function renderCTabs(active){
+  activeCCat=active;
+  G('ctabs').innerHTML=CCATS.map(function(cat,idx){
+    var isA=cat[0]===active;
+    var entered=items.filter(function(i){return cat[1].includes(i.category);}).filter(function(i){var el=document.getElementById('qc'+i.id);return el&&parseFloat(el.value)>0;}).length;
+    return'<button onclick="swCat('+idx+')" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(isA?'var(--acc)':'var(--bdr)')+';background:'+(isA?'var(--acc)':'var(--sur)')+';color:'+(isA?'#fff':'var(--mut)')+';font-size:12px;font-weight:'+(isA?700:500)+';cursor:pointer;font-family:inherit;transition:all .15s">'+cat[0]+(entered>0?'<span style="background:var(--grn);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">'+entered+'</span>':'')+'</button>';
   }).join('');
 }
 
-function switchConCatIdx(idx){ const cat=CON_CATS[idx]; if(cat){renderConCatTabs(cat[0]);renderConGroup(cat[0]);} }
+function swCat(idx){var c=CCATS[idx];if(c){renderCTabs(c[0]);renderCGrp(c[0]);}}
 
-function renderConGroup(catLabel){
-  const catDef=CON_CATS.find(c=>c[0]===catLabel); if(!catDef)return;
-  const [,cats]=catDef;
-  const catItems=items.filter(i=>cats.includes(i.category));
-  const subGroups={};
-  catItems.forEach(i=>{ let sub=i.category; if(sub==='Soft Drink') sub=i.name.toLowerCase().includes('1.25')?'Soft Drink 1.25L':'Soft Drink 330ml'; if(!subGroups[sub])subGroups[sub]=[]; subGroups[sub].push(i); });
-  const html=Object.entries(subGroups).map(([sub,subItems])=>{
-    const rows=subItems.map(i=>{
-      const s=soh(i),sc=s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)',isComp=i.is_complimentary;
-      const vt=i.vintage?' <span style="color:var(--muted);font-size:11px">'+i.vintage+'</span>':'';
-      const existingVal=(()=>{const el=document.getElementById('qty-con-'+i.id);return el?el.value:'';})();
-      return `<tr style="border-bottom:1px solid var(--border);${isComp?'background:rgba(41,128,185,.04)':''}">
-        <td style="padding:10px 14px"><div style="font-weight:500">${i.name}${vt}</div>${isComp?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':''}</td>
-        <td style="padding:10px 14px;text-align:center;font-weight:700;color:${sc}">${Math.max(0,Math.round(s))}</td>
-        <td style="padding:10px 14px;text-align:center">
-          <div style="display:flex;align-items:center;justify-content:center;gap:8px">
-            <button onclick="adjCon(${i.id},-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;color:var(--text);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button>
-            <input type="number" id="qty-con-${i.id}" min="0" step="1" placeholder="0" value="${existingVal}"
-              style="width:54px;background:var(--surface);border:1.5px solid ${isComp?'rgba(41,128,185,.5)':'var(--border)'};color:var(--white);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;font-family:inherit"
-              oninput="onConInput(${i.id})">
-            <button onclick="adjCon(${i.id},1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;color:var(--text);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button>
-          </div>
-        </td>
-      </tr>`;
+function renderCGrp(catLabel){
+  var cd=CCATS.find(function(c){return c[0]===catLabel;});if(!cd)return;
+  var cats=cd[1];
+  var ci=items.filter(function(i){return cats.includes(i.category);});
+  var subs={};
+  ci.forEach(function(i){var s=i.category;if(s==='Soft Drink')s=i.name.toLowerCase().includes('1.25')?'Soft Drink 1.25L':'Soft Drink 330ml';if(!subs[s])subs[s]=[];subs[s].push(i);});
+  var html=Object.keys(subs).map(function(sub){
+    var si=subs[sub];
+    var rows=si.map(function(i){
+      var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary,vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
+      var ev=(function(){var el=document.getElementById('qc'+i.id);return el?el.value:'';})();
+      return'<tr style="border-bottom:1px solid var(--bdr);'+(ic?'background:rgba(41,128,185,.04)':'')+'"><td style="padding:10px 14px"><div style="font-weight:500">'+i.name+vt+'</div>'+(ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+'</td><td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 14px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><button onclick="adjC('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button><input type="number" id="qc'+i.id+'" min="0" step="1" placeholder="0" value="'+ev+'" style="width:54px;background:var(--sur);border:1.5px solid '+(ic?'rgba(41,128,185,.5)':'var(--bdr)')+';color:var(--wht);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" oninput="onCI('+i.id+')"><button onclick="adjC('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button></div></td></tr>';
     }).join('');
-    const subLabel=Object.keys(subGroups).length>1?sub:null;
-    return `<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--border)">${subLabel?`<div style="background:var(--surface2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px">${subLabel}</div>`:''}<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--muted)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--muted)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--accent);background:rgba(233,69,96,.04)">Units Consumed</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    var sl=Object.keys(subs).length>1?sub:null;
+    return'<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'+(sl?'<div style="background:var(--sur2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px">'+sl+'</div>':'')+'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--acc);background:rgba(233,69,96,.04)">Units Consumed</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
-  $('con-active-group').innerHTML=html||'<div class="empty">No items in this category.</div>';
-  updateConSummary();
+  G('cgrp').innerHTML=html||'<div class="empty">No items in this category.</div>';
+  updateCSummary();
 }
 
-function adjCon(id,delta){ const el=document.getElementById('qty-con-'+id); if(!el)return; el.value=Math.max(0,(parseFloat(el.value)||0)+delta); onConInput(id); }
-function onConInput(id){ updateConSummary(); renderConCatTabs(activeConCat); }
+function adjC(id,d){var el=document.getElementById('qc'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);onCI(id);}
+function onCI(id){updateCSummary();renderCTabs(activeCCat);}
 
-function updateConSummary(){
-  const entered=items.filter(i=>{const el=document.getElementById('qty-con-'+i.id);return el&&parseFloat(el.value)>0;});
-  const summaryEl=$('con-summary');
-  if(!entered.length){summaryEl.style.display='none';return;}
-  summaryEl.style.display='block';
-  $('con-summary-list').innerHTML=entered.map(i=>{
-    const qty=parseFloat(document.getElementById('qty-con-'+i.id).value)||0;
-    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px"><span style="font-weight:600;color:var(--accent)">${qty}×</span><span>${i.name.length>30?i.name.substring(0,28)+'…':i.name}</span></div>`;
-  }).join('');
+function updateCSummary(){
+  var en=items.filter(function(i){var el=document.getElementById('qc'+i.id);return el&&parseFloat(el.value)>0;});
+  G('csum').style.display=en.length?'block':'none';
+  if(en.length) G('csumlist').innerHTML=en.map(function(i){var q=parseFloat(document.getElementById('qc'+i.id).value)||0;return'<div style="background:var(--sur2);border:1px solid var(--bdr);border-radius:20px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px"><span style="font-weight:600;color:var(--acc)">'+q+'×</span><span>'+(i.name.length>30?i.name.substring(0,28)+'…':i.name)+'</span></div>';}).join('');
 }
 
-$('submit-consumption-btn').addEventListener('click', async()=>{
-  const name=$('evt-name').value.trim(), date=$('evt-date').value, by=$('evt-by').value.trim(), type=$('evt-type').value;
+G('subcon').addEventListener('click', async function(){
+  var name=G('ename').value.trim(),date=G('edate').value,by=G('eby').value.trim(),type=G('etype').value;
   if(!name||!date||!by){toast('Event details missing',true);return;}
-  const lines=[];
-  items.forEach(i=>{const el=document.getElementById('qty-con-'+i.id);if(!el)return;const qty=parseFloat(el.value)||0;if(qty>0)lines.push({item:i,qty});});
+  var lines=[];
+  items.forEach(function(i){var el=document.getElementById('qc'+i.id);if(!el)return;var q=parseFloat(el.value)||0;if(q>0)lines.push({item:i,qty:q});});
   if(!lines.length){toast('No quantities entered',true);return;}
-  const btn=$('submit-consumption-btn'); btn.textContent='Saving…'; btn.disabled=true;
+  var btn=G('subcon'); btn.disabled=true; btn.textContent='Saving…';
   try{
-    const bookingId=($('evt-booking-id')||{value:''}).value.trim();
-    const room=($('evt-room')||{value:''}).value.trim();
-    const pax=parseInt(($('evt-pax')||{value:''}).value)||null;
-    const supervisor=($('evt-supervisor')||{value:''}).value.trim();
-    const evtTime=($('evt-time')||{value:''}).value;
-    const {data:event,error:eErr}=await sb.from('events').insert({event_name:name,event_date:date,event_time:evtTime,event_type:type,recorded_by:by,booking_id:bookingId,room,pax,supervisor}).select().single();
-    if(eErr) throw new Error(eErr.message);
-    const {error:lErr}=await sb.from('event_lines').insert(lines.map(l=>({event_id:event.id,item_id:l.item.id,quantity:l.qty})));
-    if(lErr) throw new Error(lErr.message);
-    for(const l of lines){ await sb.from('items').update({consumed:(parseFloat(l.item.consumed)||0)+l.qty}).eq('id',l.item.id); }
-    await fetchItems();
-    const eid=event.id; $('evt-name').value=''; loadConsumptionForm();
-    const printBar=document.createElement('div');
-    printBar.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4)';
-    printBar.innerHTML='<span style="font-size:13px;color:var(--white);font-weight:500">✅ Saved — '+lines.length+' items</span><button class="btn btn-outline btn-sm" onclick="printSingleConsumption('+eid+');this.parentElement.remove()">🖨️ Print Sheet</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button>';
-    document.body.appendChild(printBar);
-    setTimeout(()=>{if(printBar.parentElement)printBar.remove();},8000);
-  }catch(e){toast('Error: '+e.message,true);}
+    var bid=G('ebid').value.trim(),room=G('eroom').value.trim(),pax=parseInt(G('epax').value)||null,sup=G('esup').value.trim(),etime=G('etime').value;
+    var r1=await sb.from('events').insert({event_name:name,event_date:date,event_time:etime,event_type:type,recorded_by:by,booking_id:bid,room:room,pax:pax,supervisor:sup}).select().single();
+    if(r1.error) throw new Error(r1.error.message);
+    var r2=await sb.from('event_lines').insert(lines.map(function(l){return{event_id:r1.data.id,item_id:l.item.id,quantity:l.qty};}));
+    if(r2.error) throw new Error(r2.error.message);
+    for(var j=0;j<lines.length;j++){var l=lines[j];await sb.from('items').update({consumed:(parseFloat(l.item.consumed)||0)+l.qty}).eq('id',l.item.id);}
+    await fetchItems(); var eid=r1.data.id; G('ename').value=''; loadCon();
+    var pb=document.createElement('div');
+    pb.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:14px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+    pb.innerHTML='<span style="font-size:13px;color:var(--wht);font-weight:500">✅ Saved — '+lines.length+' items</span><button class="btn bo bsm" onclick="printCon('+eid+');this.parentElement.remove()">🖨️ Print Sheet</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:18px">✕</button>';
+    document.body.appendChild(pb);
+    setTimeout(function(){if(pb.parentElement)pb.remove();},8000);
+  }catch(ex){toast('Error: '+ex.message,true);}
   finally{btn.textContent='✅ Submit';btn.disabled=false;}
 });
 
 // ── HISTORY ───────────────────────────────────────────────────
-async function loadHistory(){
-  const {data:orders}=await sb.from('orders').select('*,order_lines(*,items(name))').order('created_at',{ascending:false});
-  const ob=$('hist-orders-body');
-  ob.innerHTML=!orders?.length?'<tr><td colspan="6"><div class="empty">No orders yet</div></td></tr>':
-    orders.map(o=>{const count=o.order_lines?.length||0;const total=(o.order_lines||[]).reduce((s,l)=>s+(l.quantity||0)*(l.unit_cost||0),0);
-    return `<tr><td>${o.order_date}</td><td style="font-weight:500">${o.ordered_by||'—'}</td><td>${count} item${count!==1?'s':''}</td><td class="td-num">${fmt(total)}</td><td style="color:var(--muted);font-size:12px">${o.notes||'—'}</td><td style="display:flex;gap:6px;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="viewOrderDetail(${o.id})">View</button><button class="btn btn-outline btn-sm" onclick="printSingleOrder(${o.id})">🖨️</button></td></tr>`;}).join('');
-
-  const {data:events}=await sb.from('events').select('*,event_lines(*,items(name))').order('created_at',{ascending:false});
-  const eb=$('hist-events-body');
-  eb.innerHTML=!events?.length?'<tr><td colspan="6"><div class="empty">No events yet</div></td></tr>':
-    events.map(e=>{const count=e.event_lines?.length||0;
-    return `<tr><td>${e.event_date}</td><td style="font-weight:500">${e.event_name}</td><td><span class="badge badge-cat">${e.event_type||'—'}</span></td><td>${e.recorded_by||'—'}</td><td>${count} item${count!==1?'s':''}</td><td style="display:flex;gap:6px;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="viewEventDetail(${e.id})">View</button><button class="btn btn-outline btn-sm" onclick="printSingleConsumption(${e.id})">🖨️</button></td></tr>`;}).join('');
+async function loadHist(){
+  var ro=await sb.from('orders').select('*,order_lines(*,items(name))').order('created_at',{ascending:false});
+  var ob=G('ohb');
+  ob.innerHTML=!(ro.data&&ro.data.length)?'<tr><td colspan="6"><div class="empty">No orders yet</div></td></tr>':
+    ro.data.map(function(o){var cnt=o.order_lines?o.order_lines.length:0,tot=(o.order_lines||[]).reduce(function(s,l){return s+(l.quantity||0)*(l.unit_cost||0);},0);return'<tr><td>'+o.order_date+'</td><td style="font-weight:500">'+(o.ordered_by||'—')+'</td><td>'+cnt+' item'+(cnt!==1?'s':'')+'</td><td>'+fmt(tot)+'</td><td style="color:var(--mut);font-size:12px">'+(o.notes||'—')+'</td><td style="display:flex;gap:6px;justify-content:flex-end"><button class="btn bo bsm" onclick="viewOrd('+o.id+')">View</button><button class="btn bo bsm" onclick="printOrd('+o.id+')">🖨️</button></td></tr>';}).join('');
+  var re=await sb.from('events').select('*,event_lines(*,items(name))').order('created_at',{ascending:false});
+  var eb=G('chb');
+  eb.innerHTML=!(re.data&&re.data.length)?'<tr><td colspan="6"><div class="empty">No events yet</div></td></tr>':
+    re.data.map(function(e){var cnt=e.event_lines?e.event_lines.length:0;return'<tr><td>'+e.event_date+'</td><td style="font-weight:500">'+e.event_name+'</td><td><span class="badge bcat">'+(e.event_type||'—')+'</span></td><td>'+(e.recorded_by||'—')+'</td><td>'+cnt+' item'+(cnt!==1?'s':'')+'</td><td style="display:flex;gap:6px;justify-content:flex-end"><button class="btn bo bsm" onclick="viewEvt('+e.id+')">View</button><button class="btn bo bsm" onclick="printCon('+e.id+')">🖨️</button></td></tr>';}).join('');
 }
 
-async function viewOrderDetail(id){
-  const {data}=await sb.from('orders').select('*,order_lines(*,items(name,category))').eq('id',id).single();
-  const total=(data.order_lines||[]).reduce((s,l)=>s+(l.quantity||0)*(l.unit_cost||0),0);
-  $('order-detail-body').innerHTML=`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)"><div class="form-row"><div><div class="section-title">Date</div>${data.order_date}</div><div><div class="section-title">By</div>${data.ordered_by||'—'}</div></div>${data.notes?`<div style="margin-top:8px;color:var(--muted);font-size:12px">${data.notes}</div>`:''}</div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface2)"><th style="padding:8px">Item</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Unit Cost</th><th style="padding:8px;text-align:right">Total</th></tr></thead><tbody>${(data.order_lines||[]).map(l=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px">${l.items?.name||'—'}</td><td style="padding:8px;text-align:center">${l.quantity}</td><td style="padding:8px;text-align:right">${fmt(l.unit_cost)}</td><td style="padding:8px;text-align:right;font-weight:600">${fmt((l.quantity||0)*(l.unit_cost||0))}</td></tr>`).join('')}</tbody><tfoot><tr style="background:var(--surface2)"><td colspan="3" style="padding:10px;font-weight:700;text-align:right">TOTAL</td><td style="padding:10px;font-weight:700;text-align:right;color:var(--green)">${fmt(total)}</td></tr></tfoot></table>`;
-  $('modal-order-detail').classList.add('open');
+async function viewOrd(id){
+  var r=await sb.from('orders').select('*,order_lines(*,items(name,category))').eq('id',id).single();
+  var d=r.data,tot=(d.order_lines||[]).reduce(function(s,l){return s+(l.quantity||0)*(l.unit_cost||0);},0);
+  G('mordb').innerHTML='<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bdr)"><b>'+d.order_date+'</b> · '+(d.ordered_by||'—')+(d.notes?'<br><small style="color:var(--mut)">'+d.notes+'</small>':'')+'</div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sur2)"><th style="padding:8px">Item</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Unit Cost</th><th style="padding:8px;text-align:right">Total</th></tr></thead><tbody>'+(d.order_lines||[]).map(function(l){return'<tr style="border-bottom:1px solid var(--bdr)"><td style="padding:8px">'+(l.items?l.items.name:'—')+'</td><td style="padding:8px;text-align:center">'+l.quantity+'</td><td style="padding:8px;text-align:right">'+fmt(l.unit_cost)+'</td><td style="padding:8px;text-align:right;font-weight:600">'+fmt((l.quantity||0)*(l.unit_cost||0))+'</td></tr>';}).join('')+'</tbody><tfoot><tr style="background:var(--sur2)"><td colspan="3" style="padding:10px;font-weight:700;text-align:right">TOTAL</td><td style="padding:10px;font-weight:700;text-align:right;color:var(--grn)">'+fmt(tot)+'</td></tr></tfoot></table>';
+  openMo('mordm');
 }
 
-async function viewEventDetail(id){
-  const {data}=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary))').eq('id',id).single();
-  $('event-detail-body').innerHTML=`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)"><div class="form-row"><div><div class="section-title">Event</div><strong>${data.event_name}</strong></div><div><div class="section-title">Date</div>${data.event_date}</div></div><div class="form-row" style="margin-top:10px"><div><div class="section-title">Type</div>${data.event_type||'—'}</div><div><div class="section-title">Recorded By</div>${data.recorded_by||'—'}</div></div></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--surface2)"><th style="padding:8px">Item</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:center">Comp?</th></tr></thead><tbody>${(data.event_lines||[]).map(l=>`<tr style="border-bottom:1px solid var(--border);${l.items?.is_complimentary?'color:var(--blue)':''}"><td style="padding:8px">${l.items?.name||'—'}</td><td style="padding:8px;text-align:center;font-weight:700">${l.quantity}</td><td style="padding:8px;text-align:center">${l.items?.is_complimentary?'✅':'—'}</td></tr>`).join('')}</tbody></table>`;
-  $('modal-event-detail').classList.add('open');
+async function viewEvt(id){
+  var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary))').eq('id',id).single();
+  var d=r.data;
+  G('meventb').innerHTML='<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bdr)"><b>'+d.event_name+'</b> · '+(d.event_date||'')+(d.event_type?' · '+d.event_type:'')+(d.recorded_by?' · '+d.recorded_by:'')+'</div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sur2)"><th style="padding:8px">Item</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:center">Comp?</th></tr></thead><tbody>'+(d.event_lines||[]).map(function(l){return'<tr style="border-bottom:1px solid var(--bdr)'+(l.items&&l.items.is_complimentary?';color:var(--blu)':'')+'"><td style="padding:8px">'+(l.items?l.items.name:'—')+'</td><td style="padding:8px;text-align:center;font-weight:700">'+l.quantity+'</td><td style="padding:8px;text-align:center">'+(l.items&&l.items.is_complimentary?'✅':'—')+'</td></tr>';}).join('')+'</tbody></table>';
+  openMo('meventm');
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────
 function loadSettings(){
-  const stored=localStorage.getItem('pwc-bev-settings');
-  if(stored) settings=JSON.parse(stored);
-  const sel=$('current-user');
-  sel.innerHTML='<option value="">Select your name</option>'+(settings.members||[]).map(m=>`<option value="${m}">${m}</option>`).join('');
-  renderMemberList();
+  var st=localStorage.getItem('pbevs'); if(st) settings=JSON.parse(st);
+  var sel=G('usel');
+  sel.innerHTML='<option value="">Select your name</option>'+(settings.members||[]).map(function(m){return'<option value="'+m+'">'+m+'</option>';}).join('');
+  renderML();
 }
-function saveSettings(){ localStorage.setItem('pwc-bev-settings',JSON.stringify(settings)); }
-function renderMemberList(){
-  const el=$('member-list');
-  if(!settings.members?.length){el.innerHTML='<span style="color:var(--muted);font-size:13px">No members added yet</span>';return;}
-  el.innerHTML=settings.members.map(m=>`<div style="display:flex;align-items:center;gap:6px;background:var(--surface2);padding:6px 12px;border-radius:20px;border:1px solid var(--border)"><span style="font-size:13px">${m}</span><button onclick="removeMember('${m}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1">✕</button></div>`).join('');
-  const sel=$('current-user'),prev=sel.value;
-  sel.innerHTML='<option value="">Select your name</option>'+settings.members.map(m=>`<option value="${m}" ${m===prev?'selected':''}>${m}</option>`).join('');
+function saveS(){ localStorage.setItem('pbevs',JSON.stringify(settings)); }
+function renderML(){
+  var el=G('mlist');
+  if(!(settings.members&&settings.members.length)){el.innerHTML='<span style="color:var(--mut);font-size:13px">No members added</span>';return;}
+  el.innerHTML=settings.members.map(function(m){return'<div style="display:flex;align-items:center;gap:6px;background:var(--sur2);padding:6px 12px;border-radius:20px;border:1px solid var(--bdr)"><span style="font-size:13px">'+m+'</span><button onclick="rmM(\''+m+'\')" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:14px;line-height:1">✕</button></div>';}).join('');
+  var sel=G('usel'),prev=sel.value;
+  sel.innerHTML='<option value="">Select your name</option>'+settings.members.map(function(m){return'<option value="'+m+'"'+(m===prev?' selected':'')+'>'+m+'</option>';}).join('');
 }
-$('add-member-btn').addEventListener('click',()=>{
-  const name=$('new-member-input').value.trim(); if(!name)return;
+G('addmb').addEventListener('click',function(){
+  var n=G('nmi').value.trim(); if(!n)return;
   if(!settings.members)settings.members=[];
-  if(!settings.members.includes(name)){settings.members.push(name);saveSettings();renderMemberList();}
-  $('new-member-input').value='';
+  if(!settings.members.includes(n)){settings.members.push(n);saveS();renderML();}
+  G('nmi').value='';
 });
-function removeMember(name){ settings.members=settings.members.filter(m=>m!==name);saveSettings();renderMemberList(); }
-$('reset-month-btn').addEventListener('click',async()=>{
-  if(!confirm('Reset all opening stocks to current SOH? Cannot be undone.'))return;
-  for(const i of items){ const current=Math.max(0,soh(i)); await sb.from('items').update({opening_soh:current,orders_in:0,consumed:0}).eq('id',i.id); }
+function rmM(n){settings.members=settings.members.filter(function(m){return m!==n;});saveS();renderML();}
+G('rstbtn').addEventListener('click', async function(){
+  if(!confirm('Reset all opening stocks to current SOH?'))return;
+  for(var j=0;j<items.length;j++){var i=items[j],cur=Math.max(0,soh(i));await sb.from('items').update({opening_soh:cur,orders_in:0,consumed:0}).eq('id',i.id);}
   await fetchItems(); toast('✅ Monthly reset complete');
 });
 
 // ── REPORTS ───────────────────────────────────────────────────
 async function loadReports(){
-  const el=$('reports-list');
-  const {data,error}=await sb.from('monthly_reports').select('*').order('report_month',{ascending:false});
-  if(error||!data?.length){el.innerHTML='<div class="empty">No reports yet. Click "Generate This Month" above.</div>';return;}
-  el.innerHTML='<div>'+data.map(r=>{
-    const snap=r.snapshot||{};
-    const val=snap.total_value?fmt(snap.total_value):'—';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px"><div><div style="font-weight:700;font-size:14px;color:var(--white)">${r.report_label||r.report_month}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Generated ${new Date(r.generated_at).toLocaleString('en-AU')} ${r.is_auto?'· <span style="color:var(--green)">Auto</span>':'· Manual'} · Portfolio: ${val} · ${snap.item_count||0} items · ${snap.order_count||0} orders · ${snap.event_count||0} events</div></div><div style="display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="printMonthlyReport('${r.report_month}')">🖨️ Print</button><button class="btn btn-outline btn-sm" onclick="exportMonthlyExcel('${r.report_month}')">📊 Excel</button></div></div>`;
+  var el=G('rlist');
+  var r=await sb.from('monthly_reports').select('*').order('report_month',{ascending:false});
+  if(r.error||!(r.data&&r.data.length)){el.innerHTML='<div class="empty">No reports yet. Click "Generate Now" above.</div>';return;}
+  el.innerHTML='<div>'+r.data.map(function(rep){
+    var sn=rep.snapshot||{},val=sn.total_value?fmt(sn.total_value):'—';
+    return'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;gap:10px"><div><div style="font-weight:700;font-size:14px;color:var(--wht)">'+(rep.report_label||rep.report_month)+'</div><div style="font-size:11px;color:var(--mut);margin-top:3px">'+new Date(rep.generated_at).toLocaleString('en-AU')+' · Portfolio: '+val+' · '+(sn.item_count||0)+' items · '+(sn.order_count||0)+' orders · '+(sn.event_count||0)+' events</div></div><div style="display:flex;gap:8px"><button class="btn bo bsm" onclick="printRep(\''+rep.report_month+'\')">🖨️ Print</button><button class="btn bo bsm" onclick="exportRepXL(\''+rep.report_month+'\')">📊 Excel</button></div></div>';
   }).join('')+'</div>';
 }
 
-async function generateMonthlyReport(isAuto){
-  const now=new Date();
-  const targetDate=isAuto?new Date(now.getFullYear(),now.getMonth()-1,1):new Date(now.getFullYear(),now.getMonth(),1);
-  const monthKey=targetDate.getFullYear()+'-'+String(targetDate.getMonth()+1).padStart(2,'0');
-  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const label=monthNames[targetDate.getMonth()]+' '+targetDate.getFullYear();
+async function genReport(isAuto){
+  var now=new Date(),tgt=isAuto?new Date(now.getFullYear(),now.getMonth()-1,1):new Date(now.getFullYear(),now.getMonth(),1);
+  var mk=tgt.getFullYear()+'-'+String(tgt.getMonth()+1).padStart(2,'0');
+  var mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var lbl=mn[tgt.getMonth()]+' '+tgt.getFullYear();
   await fetchItems();
-  const {data:orders}=await sb.from('orders').select('*');
-  const {data:events}=await sb.from('events').select('*');
-  const snapshot={
-    total_value:items.reduce((s,i)=>s+Math.max(0,soh(i))*i.luc,0),
-    item_count:items.length,in_stock:items.filter(i=>soh(i)>0).length,
-    out_of_stock:items.filter(i=>soh(i)<=0).length,
-    order_count:orders?.length||0,event_count:events?.length||0,
-    items:items.map(i=>({id:i.id,name:i.name,category:i.category,price_tier:i.price_tier,supplier:i._supplier||i.supplier,luc:i.luc,opening_soh:i.opening_soh,orders_in:i.orders_in,consumed:i.consumed,current_soh:Math.max(0,soh(i)),soh_value:Math.max(0,soh(i))*i.luc}))
-  };
-  const {error}=await sb.from('monthly_reports').upsert({report_month:monthKey,report_label:label,is_auto:isAuto,generated_by:isAuto?'Auto':($('current-user').value||'Manual'),snapshot},{onConflict:'report_month'});
-  if(error){toast('Error saving report: '+error.message,true);return;}
-  toast('✅ Report saved: '+label); loadReports();
+  var ro=await sb.from('orders').select('*'); var re=await sb.from('events').select('*');
+  var snap={total_value:items.reduce(function(s,i){return s+Math.max(0,soh(i))*i.luc;},0),item_count:items.length,in_stock:items.filter(function(i){return soh(i)>0;}).length,out_of_stock:items.filter(function(i){return soh(i)<=0;}).length,order_count:(ro.data||[]).length,event_count:(re.data||[]).length,items:items.map(function(i){return{id:i.id,name:i.name,category:i.category,price_tier:i.price_tier,supplier:i._sup||i.supplier,luc:i.luc,opening_soh:i.opening_soh,orders_in:i.orders_in,consumed:i.consumed,current_soh:Math.max(0,soh(i)),soh_value:Math.max(0,soh(i))*i.luc};})};
+  var r=await sb.from('monthly_reports').upsert({report_month:mk,report_label:lbl,is_auto:isAuto,generated_by:isAuto?'Auto':(G('usel').value||'Manual'),snapshot:snap},{onConflict:'report_month'});
+  if(r.error){toast('Error: '+r.error.message,true);return;}
+  toast('✅ Report saved: '+lbl); loadReports();
 }
 
-async function checkAutoMonthlyReport(){
+async function autoReport(){
   if(new Date().getDate()===1){
-    const lastMonth=new Date(new Date().getFullYear(),new Date().getMonth()-1,1);
-    const monthKey=lastMonth.getFullYear()+'-'+String(lastMonth.getMonth()+1).padStart(2,'0');
-    const {count}=await sb.from('monthly_reports').select('*',{count:'exact',head:true}).eq('report_month',monthKey);
-    if(!count) await generateMonthlyReport(true);
+    var lm=new Date(new Date().getFullYear(),new Date().getMonth()-1,1);
+    var mk=lm.getFullYear()+'-'+String(lm.getMonth()+1).padStart(2,'0');
+    var r=await sb.from('monthly_reports').select('*',{count:'exact',head:true}).eq('report_month',mk);
+    if(!r.count) await genReport(true);
   }
 }
 
 // ── PRINT ─────────────────────────────────────────────────────
-function openPrintWindow(title,htmlBody){
-  const w=window.open('','_blank','width=900,height=700');
-  w.document.write('<!DOCTYPE html><html><head><title>'+title+'</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12px;color:#111;margin:20px 32px} h2{font-size:14px;color:#444;margin:16px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px} table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px} th{background:#1a1d2e;color:#fff;padding:7px 10px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase} td{padding:6px 10px;border-bottom:1px solid #e5e5e5} tr:nth-child(even) td{background:#f8f8f8} .header{display:flex;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1a1d2e} .logo{font-size:18px;font-weight:900;color:#1a1d2e} .summary-box{background:#f0f3f4;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap} .summary-item strong{display:block;font-size:16px} .section-header{background:#1a1d2e;color:#fff;padding:6px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-top:12px} .badge-ok{color:#27ae60;font-weight:700} .badge-low{color:#f39c12;font-weight:700} .badge-out{color:#e94560;font-weight:700} @media print{body{margin:10px 16px}}</style></head><body><div class="header"><div><div class="logo">🍷 PwC Sydney — Beverage Portal</div><div style="font-size:13px;margin-top:2px">'+title+'</div></div><div style="text-align:right;color:#666;font-size:11px">Generated: '+new Date().toLocaleString('en-AU')+'</div></div>'+htmlBody+'<script>window.onload=()=>{window.print();}<\/script></body></html>');
+function pw(title,body){
+  var w=window.open('','_blank','width=900,height=700');
+  w.document.write('<!DOCTYPE html><html><head><title>'+title+'</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12px;color:#111;margin:20px 32px}h2{font-size:14px;color:#444;margin:16px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px}th{background:#1a1d2e;color:#fff;padding:7px 10px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase}td{padding:6px 10px;border-bottom:1px solid #e5e5e5}tr:nth-child(even) td{background:#f8f8f8}.hdr{display:flex;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1a1d2e}.sb{background:#f0f3f4;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap}.si strong{display:block;font-size:16px}.sh{background:#1a1d2e;color:#fff;padding:6px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-top:12px}.ok{color:#27ae60;font-weight:700}.lo{color:#f39c12;font-weight:700}.ou{color:#e94560;font-weight:700}@media print{body{margin:10px 16px}}</style></head><body><div class="hdr"><div><b style="font-size:18px">🍷 PwC Sydney — Beverage Portal</b><div style="margin-top:2px">'+title+'</div></div><div style="text-align:right;color:#666;font-size:11px">'+new Date().toLocaleString('en-AU')+'</div></div>'+body+'<script>window.onload=function(){window.print();}<\/script></body></html>');
   w.document.close();
 }
 
-function printInventory(){
-  const LAYOUT=[{label:'LUXE',tier:'Luxe $65+',cats:['Champagne','Sparkling','White','Red']},{label:'CLIENT',tier:'Client $30-65',cats:['Champagne','Sparkling','White','Rose','Red']},{label:'STAFF',tier:'Staff <$30',cats:['Sparkling','White','Rose','Red','Dessert Wine']},{label:'NON-ALCOHOLIC',tier:'Non-Alc',cats:['Non-Alc Wine','Non-Alc Cocktail']},{label:'BEER',tier:null,cats:['Beer']},{label:'SOFT DRINKS',tier:null,cats:['Soft Drink','Water']},{label:'JUICES',tier:null,cats:['Juice']},{label:'SPIRITS & MIXERS',tier:null,cats:['Spirit','Mixer']}];
-  const totalVal=items.reduce((s,i)=>s+Math.max(0,soh(i))*i.luc,0);
-  let html=`<div class="summary-box"><div class="summary-item"><strong>${fmt(totalVal)}</strong>Portfolio Value</div><div class="summary-item"><strong>${items.length}</strong>Total Items</div><div class="summary-item"><strong class="badge-ok">${items.filter(i=>soh(i)>0).length}</strong>In Stock</div><div class="summary-item"><strong class="badge-out">${items.filter(i=>soh(i)<=0).length}</strong>Out of Stock</div></div>`;
-  LAYOUT.forEach(sec=>{
-    const secItems=items.filter(i=>{if(sec.tier&&i.price_tier!==sec.tier)return false;return sec.cats.includes(i.category);});
-    if(!secItems.length)return;
-    html+=`<div class="section-header">${sec.label}${sec.tier?' — '+sec.tier:''}</div><table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>SOH</th><th>Status</th></tr></thead><tbody>`;
-    secItems.forEach(i=>{const s=Math.max(0,soh(i));const cls=s<=0?'badge-out':s<=3?'badge-low':'badge-ok';html+=`<tr><td>${i.name}</td><td>${i.vintage||''}</td><td>${i._supplier||''}</td><td>${Math.round(i.opening_soh||0)}</td><td>${Math.round(i.orders_in||0)}</td><td>${Math.round(i.consumed||0)}</td><td><strong>${Math.round(s)}</strong></td><td class="${cls}">${s<=0?'OUT':s<=3?'LOW':'OK'}</td></tr>`;});
+function printInv(){
+  var LAYOUT=[{l:'LUXE',t:'Luxe $65+',c:['Champagne','Sparkling','White','Red']},{l:'CLIENT',t:'Client $30-65',c:['Champagne','Sparkling','White','Rose','Red']},{l:'STAFF',t:'Staff <$30',c:['Sparkling','White','Rose','Red','Dessert Wine']},{l:'NON-ALCOHOLIC',t:'Non-Alc',c:['Non-Alc Wine','Non-Alc Cocktail']},{l:'BEER',t:null,c:['Beer']},{l:'SOFT DRINKS',t:null,c:['Soft Drink','Water']},{l:'JUICES',t:null,c:['Juice']},{l:'SPIRITS & MIXERS',t:null,c:['Spirit','Mixer']}];
+  var tv=items.reduce(function(s,i){return s+Math.max(0,soh(i))*i.luc;},0);
+  var html='<div class="sb"><div class="si"><strong>'+fmt(tv)+'</strong>Portfolio Value</div><div class="si"><strong>'+items.length+'</strong>Total Items</div><div class="si"><strong class="ok">'+items.filter(function(i){return soh(i)>0;}).length+'</strong>In Stock</div><div class="si"><strong class="ou">'+items.filter(function(i){return soh(i)<=0;}).length+'</strong>Out of Stock</div></div>';
+  LAYOUT.forEach(function(sec){
+    var si=items.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;return sec.c.includes(i.category);});
+    if(!si.length)return;
+    html+='<div class="sh">'+sec.l+(sec.t?' — '+sec.t:'')+'</div><table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>SOH</th><th>Status</th></tr></thead><tbody>';
+    si.forEach(function(i){var s=Math.max(0,soh(i)),cl=s<=0?'ou':s<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+(i.vintage||'')+'</td><td>'+(i._sup||'')+'</td><td>'+Math.round(i.opening_soh||0)+'</td><td>'+Math.round(i.orders_in||0)+'</td><td>'+Math.round(i.consumed||0)+'</td><td><strong>'+Math.round(s)+'</strong></td><td class="'+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
     html+='</tbody></table>';
   });
-  openPrintWindow('Inventory — '+new Date().toLocaleDateString('en-AU'),html);
+  pw('Inventory — '+new Date().toLocaleDateString('en-AU'),html);
 }
 
-async function printSingleOrder(orderId){
-  const {data:o}=await sb.from('orders').select('*,order_lines(*,items(name,category))').eq('id',orderId).single();
-  if(!o){toast('Order not found',true);return;}
-  const total=(o.order_lines||[]).reduce((s,l)=>s+(l.quantity||0)*(l.unit_cost||0),0);
-  const grouped={};
-  (o.order_lines||[]).forEach(l=>{const c=l.items?.category||'Other';if(!grouped[c])grouped[c]=[];grouped[c].push(l);});
-  let html=`<div class="summary-box"><div class="summary-item"><strong>${o.order_date}</strong>Date</div><div class="summary-item"><strong>${o.ordered_by||'—'}</strong>Ordered By</div><div class="summary-item"><strong>${(o.order_lines||[]).length}</strong>Items</div><div class="summary-item"><strong>${fmt(total)}</strong>Total</div></div>${o.notes?'<p style="margin-bottom:12px"><b>Note:</b> '+o.notes+'</p>':''}`;
-  Object.entries(grouped).forEach(([cat,lines])=>{
-    html+=`<h2>${cat}</h2><table><thead><tr><th>Item</th><th>Units</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody>`;
-    lines.forEach(l=>{html+=`<tr><td>${l.items?.name||'—'}</td><td>${l.quantity}</td><td>${fmt(l.unit_cost)}</td><td>${fmt((l.quantity||0)*(l.unit_cost||0))}</td></tr>`;});
-    html+='</tbody></table>';
-  });
-  html+=`<table><tr style="background:#1a1d2e"><td colspan="3" style="padding:10px;color:#fff;font-weight:700;text-align:right">ORDER TOTAL</td><td style="padding:10px;color:#27ae60;font-weight:900;text-align:right">${fmt(total)}</td></tr></table>`;
-  openPrintWindow('Order — '+o.order_date+' — '+(o.ordered_by||''),html);
+async function printOrd(id){
+  var r=await sb.from('orders').select('*,order_lines(*,items(name,category))').eq('id',id).single();
+  if(r.error){toast('Not found',true);return;}
+  var o=r.data,tot=(o.order_lines||[]).reduce(function(s,l){return s+(l.quantity||0)*(l.unit_cost||0);},0);
+  var grp={};
+  (o.order_lines||[]).forEach(function(l){var c=l.items?l.items.category:'Other';if(!grp[c])grp[c]=[];grp[c].push(l);});
+  var html='<div class="sb"><div class="si"><strong>'+o.order_date+'</strong>Date</div><div class="si"><strong>'+(o.ordered_by||'—')+'</strong>Ordered By</div><div class="si"><strong>'+((o.order_lines||[]).length)+'</strong>Items</div><div class="si"><strong>'+fmt(tot)+'</strong>Total</div></div>'+(o.notes?'<p style="margin-bottom:12px"><b>Note:</b> '+o.notes+'</p>':'');
+  Object.keys(grp).forEach(function(cat){html+='<h2>'+cat+'</h2><table><thead><tr><th>Item</th><th>Units</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody>';grp[cat].forEach(function(l){html+='<tr><td>'+(l.items?l.items.name:'—')+'</td><td>'+l.quantity+'</td><td>'+fmt(l.unit_cost)+'</td><td>'+fmt((l.quantity||0)*(l.unit_cost||0))+'</td></tr>';});html+='</tbody></table>';});
+  html+='<table><tr style="background:#1a1d2e"><td colspan="3" style="padding:10px;color:#fff;font-weight:700;text-align:right">ORDER TOTAL</td><td style="padding:10px;color:#27ae60;font-weight:900;text-align:right">'+fmt(tot)+'</td></tr></table>';
+  pw('Order — '+o.order_date+' — '+(o.ordered_by||''),html);
 }
 
-async function printSingleConsumption(eventId){
-  const {data:e}=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary,opening_soh,orders_in,consumed))').eq('id',eventId).single();
-  if(!e){toast('Event not found',true);return;}
-  let html=`<table style="border:1px solid #ccc;border-collapse:collapse;width:100%;margin-bottom:20px;font-size:12px"><tr><td style="padding:8px 12px;border:1px solid #ccc;width:130px;font-weight:600">Function Name</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:14px" colspan="3">${e.event_name||'—'}</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Booking ID</td><td style="padding:8px 12px;border:1px solid #ccc">${e.booking_id||'—'}</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Package Type</td><td style="padding:8px 12px;border:1px solid #ccc">${e.event_type||'—'}</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Date | Time</td><td style="padding:8px 12px;border:1px solid #ccc">${e.event_date||'—'}${e.event_time?' | '+e.event_time:''}</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Pax</td><td style="padding:8px 12px;border:1px solid #ccc">${e.pax||'—'}</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Room</td><td style="padding:8px 12px;border:1px solid #ccc">${e.room||'—'}</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Supervisor</td><td style="padding:8px 12px;border:1px solid #ccc">${e.supervisor||'—'}</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Recorded By</td><td style="padding:8px 12px;border:1px solid #ccc" colspan="3">${e.recorded_by||'—'}</td></tr></table>`;
-  const cats={};
-  (e.event_lines||[]).forEach(l=>{const c=l.items?.category||'Other';if(!cats[c])cats[c]=[];cats[c].push(l);});
+async function printCon(id){
+  var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary,opening_soh,orders_in,consumed))').eq('id',id).single();
+  if(r.error){toast('Not found',true);return;}
+  var e=r.data;
+  var html='<table style="border:1px solid #ccc;border-collapse:collapse;width:100%;margin-bottom:20px;font-size:12px"><tr><td style="padding:8px 12px;border:1px solid #ccc;width:130px;font-weight:600">Function Name</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:14px" colspan="3">'+(e.event_name||'—')+'</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Booking ID</td><td style="padding:8px 12px;border:1px solid #ccc">'+(e.booking_id||'—')+'</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Package Type</td><td style="padding:8px 12px;border:1px solid #ccc">'+(e.event_type||'—')+'</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Date | Time</td><td style="padding:8px 12px;border:1px solid #ccc">'+(e.event_date||'—')+(e.event_time?' | '+e.event_time:'')+'</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Pax</td><td style="padding:8px 12px;border:1px solid #ccc">'+(e.pax||'—')+'</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Room</td><td style="padding:8px 12px;border:1px solid #ccc">'+(e.room||'—')+'</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Supervisor</td><td style="padding:8px 12px;border:1px solid #ccc">'+(e.supervisor||'—')+'</td></tr><tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Recorded By</td><td style="padding:8px 12px;border:1px solid #ccc" colspan="3">'+(e.recorded_by||'—')+'</td></tr></table>';
+  var cats={};
+  (e.event_lines||[]).forEach(function(l){var c=l.items?l.items.category:'Other';if(!cats[c])cats[c]=[];cats[c].push(l);});
   html+='<table><thead><tr><th style="width:40%">Product</th><th>Opening SOH</th><th style="background:#ffe0e0">Consumed</th><th>Closing SOH</th><th>Comp</th></tr></thead><tbody>';
-  Object.entries(cats).forEach(([cat,lines])=>{
-    html+=`<tr><td colspan="5" style="background:#1a1d2e;color:#fff;padding:6px 10px;font-weight:700;font-size:11px;text-transform:uppercase">${cat}</td></tr>`;
-    lines.forEach(l=>{const item=l.items||{};const closing=Math.max(0,Math.round((item.opening_soh||0)+(item.orders_in||0)-(item.consumed||0)));html+=`<tr><td style="padding:7px 10px">${item.name||'—'}</td><td style="padding:7px 10px;text-align:center">${Math.round(item.opening_soh||0)}</td><td style="padding:7px 10px;text-align:center;background:#fff5f5;font-weight:700;color:#c0392b">${l.quantity||0}</td><td style="padding:7px 10px;text-align:center">${closing}</td><td style="padding:7px 10px;text-align:center">${item.is_complimentary?'✓':''}</td></tr>`;});
+  Object.keys(cats).forEach(function(cat){
+    html+='<tr><td colspan="5" style="background:#1a1d2e;color:#fff;padding:6px 10px;font-weight:700;font-size:11px;text-transform:uppercase">'+cat+'</td></tr>';
+    cats[cat].forEach(function(l){var it=l.items||{},cl=Math.max(0,Math.round((it.opening_soh||0)+(it.orders_in||0)-(it.consumed||0)));html+='<tr><td style="padding:7px 10px">'+(it.name||'—')+'</td><td style="padding:7px 10px;text-align:center">'+Math.round(it.opening_soh||0)+'</td><td style="padding:7px 10px;text-align:center;background:#fff5f5;font-weight:700;color:#c0392b">'+(l.quantity||0)+'</td><td style="padding:7px 10px;text-align:center">'+cl+'</td><td style="padding:7px 10px;text-align:center">'+(it.is_complimentary?'✓':'')+'</td></tr>';});
   });
   html+='</tbody></table>';
-  openPrintWindow('Beverage Consumption Sheet — '+(e.event_name||e.event_date),html);
+  pw('Beverage Consumption Sheet — '+(e.event_name||e.event_date),html);
 }
 
-async function printMonthlyReport(monthKey){
-  const {data:r}=await sb.from('monthly_reports').select('*').eq('report_month',monthKey).single();
-  if(!r){toast('Report not found',true);return;}
-  const snap=r.snapshot||{},snapItems=snap.items||[];
-  let html=`<div class="summary-box"><div class="summary-item"><strong>${snap.total_value?fmt(snap.total_value):'—'}</strong>Portfolio Value</div><div class="summary-item"><strong>${snap.item_count||0}</strong>Items</div><div class="summary-item"><strong class="badge-ok">${snap.in_stock||0}</strong>In Stock</div><div class="summary-item"><strong class="badge-out">${snap.out_of_stock||0}</strong>Out</div><div class="summary-item"><strong>${snap.order_count||0}</strong>Orders</div><div class="summary-item"><strong>${snap.event_count||0}</strong>Events</div></div><table><thead><tr><th>Item</th><th>Category</th><th>Tier</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>Closing SOH</th><th>Status</th></tr></thead><tbody>`;
-  snapItems.forEach(i=>{const cls=i.current_soh<=0?'badge-out':i.current_soh<=3?'badge-low':'badge-ok';html+=`<tr><td>${i.name}</td><td>${i.category}</td><td>${i.price_tier}</td><td>${i.supplier||'—'}</td><td>${Math.round(i.opening_soh||0)}</td><td>${Math.round(i.orders_in||0)}</td><td>${Math.round(i.consumed||0)}</td><td><strong>${Math.round(i.current_soh||0)}</strong></td><td class="${cls}">${i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK'}</td></tr>`;});
+async function printRep(mk){
+  var r=await sb.from('monthly_reports').select('*').eq('report_month',mk).single();
+  if(r.error){toast('Not found',true);return;}
+  var rep=r.data,sn=rep.snapshot||{},si=sn.items||[];
+  var html='<div class="sb"><div class="si"><strong>'+(sn.total_value?fmt(sn.total_value):'—')+'</strong>Portfolio Value</div><div class="si"><strong>'+(sn.item_count||0)+'</strong>Items</div><div class="si"><strong class="ok">'+(sn.in_stock||0)+'</strong>In Stock</div><div class="si"><strong class="ou">'+(sn.out_of_stock||0)+'</strong>Out</div><div class="si"><strong>'+(sn.order_count||0)+'</strong>Orders</div><div class="si"><strong>'+(sn.event_count||0)+'</strong>Events</div></div><table><thead><tr><th>Item</th><th>Category</th><th>Tier</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>Closing SOH</th><th>Status</th></tr></thead><tbody>';
+  si.forEach(function(i){var cl=i.current_soh<=0?'ou':i.current_soh<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+i.category+'</td><td>'+i.price_tier+'</td><td>'+(i.supplier||'—')+'</td><td>'+Math.round(i.opening_soh||0)+'</td><td>'+Math.round(i.orders_in||0)+'</td><td>'+Math.round(i.consumed||0)+'</td><td><strong>'+Math.round(i.current_soh||0)+'</strong></td><td class="'+cl+'">'+(i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK')+'</td></tr>';});
   html+='</tbody></table>';
-  openPrintWindow('Stocktake Report — '+(r.report_label||monthKey),html);
+  pw('Stocktake Report — '+(rep.report_label||mk),html);
 }
 
 // ── EXCEL ─────────────────────────────────────────────────────
-function exportInventoryExcel(){
+function exportInvXL(){
   if(typeof XLSX==='undefined'){toast('Excel loading, try again',true);return;}
-  const ws_data=[['Item','Category','Price Tier','Supplier','Vintage','Opening SOH','Ordered In','Consumed','Current SOH','Status']];
-  items.forEach(i=>{const s=Math.max(0,soh(i));ws_data.push([i.name,i.category,i.price_tier,i._supplier||i.supplier||'',i.vintage||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(s),s<=0?'OUT':s<=3?'LOW':'OK']);});
-  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(ws_data);
-  ws['!cols']=[{wch:40},{wch:16},{wch:16},{wch:18},{wch:8},{wch:12},{wch:12},{wch:12},{wch:12},{wch:8}];
+  var d=[['Item','Category','Price Tier','Supplier','Vintage','Opening','Ordered','Consumed','SOH','Status']];
+  items.forEach(function(i){var s=Math.max(0,soh(i));d.push([i.name,i.category,i.price_tier,i._sup||i.supplier||'',i.vintage||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(s),s<=0?'OUT':s<=3?'LOW':'OK']);});
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(d);
+  ws['!cols']=[{wch:40},{wch:16},{wch:16},{wch:18},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8}];
   XLSX.utils.book_append_sheet(wb,ws,'Inventory');
-  XLSX.writeFile(wb,'PwC_Beverage_Inventory_'+new Date().toISOString().split('T')[0]+'.xlsx');
-  toast('📊 Inventory exported');
+  XLSX.writeFile(wb,'PwC_Inventory_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('📊 Exported to Excel');
 }
 
-async function exportMonthlyExcel(monthKey){
+async function exportRepXL(mk){
   if(typeof XLSX==='undefined'){toast('Excel loading, try again',true);return;}
-  const {data:r}=await sb.from('monthly_reports').select('*').eq('report_month',monthKey).single();
-  if(!r){toast('Report not found',true);return;}
-  const snap=r.snapshot||{},snapItems=snap.items||[];
-  const rows=[['Item','Category','Price Tier','Supplier','Opening SOH','Ordered In','Consumed','Closing SOH','Status']];
-  snapItems.forEach(i=>{rows.push([i.name,i.category,i.price_tier,i.supplier||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(i.current_soh||0),i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK']);});
-  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:42},{wch:18},{wch:16},{wch:18},{wch:12},{wch:12},{wch:12},{wch:12},{wch:8}];
-  XLSX.utils.book_append_sheet(wb,ws,r.report_label||monthKey);
-  XLSX.writeFile(wb,'PwC_Stocktake_'+monthKey+'.xlsx');
-  toast('📊 Report exported');
+  var r=await sb.from('monthly_reports').select('*').eq('report_month',mk).single();
+  if(r.error){toast('Not found',true);return;}
+  var sn=r.data.snapshot||{},si=sn.items||[];
+  var d=[['Item','Category','Tier','Supplier','Opening','Ordered','Consumed','Closing SOH','Status']];
+  si.forEach(function(i){d.push([i.name,i.category,i.price_tier,i.supplier||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(i.current_soh||0),i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK']);});
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(d);
+  ws['!cols']=[{wch:42},{wch:18},{wch:16},{wch:18},{wch:10},{wch:10},{wch:10},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,r.data.report_label||mk);
+  XLSX.writeFile(wb,'PwC_Stocktake_'+mk+'.xlsx');
+  toast('📊 Exported to Excel');
 }
 </script>
 </body>
