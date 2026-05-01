@@ -193,43 +193,40 @@
   /* ── LOGIN SCREEN ── */
   #login-screen {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0; left: 0;
     width: 100vw; height: 100vh;
     background: #0f1117;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 99999;
-    padding: 20px;
-    box-sizing: border-box;
   }
   #login-screen.hidden { display: none !important; }
   .login-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1d2e;
+    border: 1px solid #2d3050;
     border-radius: 16px;
     padding: 40px 36px;
     width: 100%;
     max-width: 400px;
     box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-    position: relative;
-    z-index: 100000;
+    box-sizing: border-box;
   }
-  .login-card .brand { text-align: center; margin-bottom: 32px; }
-  .login-card .brand .icon { font-size: 44px; margin-bottom: 12px; display: block; }
-  .login-card .brand h1 { font-size: 22px; font-weight: 800; color: var(--white); }
-  .login-card .brand p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .login-card .brand { text-align: center; margin-bottom: 28px; }
+  .login-card .brand .icon { font-size: 44px; margin-bottom: 10px; display: block; }
+  .login-card .brand h1 { font-size: 22px; font-weight: 800; color: #ffffff; margin: 0; }
+  .login-card .brand p { font-size: 13px; color: #8892a4; margin-top: 6px; }
   .login-card .form-group { margin-bottom: 16px; }
-  .login-card label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
-  .login-card input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.15s; box-sizing: border-box; }
-  .login-card input:focus { border-color: var(--accent); }
-  .login-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; transition: background 0.15s; }
+  .login-card label { display: block; font-size: 11px; font-weight: 700; color: #8892a4; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .login-card input { width: 100%; background: #222538; border: 1px solid #2d3050; color: #e8eaf0; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; font-family: inherit; box-sizing: border-box; }
+  .login-card input:focus { border-color: #e94560; }
+  .login-btn { width: 100%; background: #e94560; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
   .login-btn:hover:not(:disabled) { background: #c73652; }
   .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .login-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
   .login-error.show { display: block; }
-  #logout-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
-  #logout-btn:hover { color: var(--accent); background: rgba(233,69,96,0.08); }
+  #logout-btn { background: none; border: none; color: #8892a4; font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; }
+  #logout-btn:hover { color: #e94560; }
 </style>
 </head>
 <body>
@@ -958,7 +955,7 @@ async function doLogin() {
   const btn     = document.getElementById('login-btn');
 
   const email    = (emailEl?.value || '').trim();
-  const password = passEl?.value || '';
+  const password = (passEl?.value || '');
 
   errEl.classList.remove('show');
 
@@ -974,18 +971,23 @@ async function doLogin() {
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) {
-      let msg = 'Sign in failed. ';
-      if (error.message.includes('Invalid login')) msg += 'Incorrect email or password.';
-      else if (error.message.includes('Email not confirmed')) msg += 'Please confirm your email first — check your inbox, or disable email confirmation in Supabase Auth settings.';
-      else msg += error.message;
+      let msg = error.message || 'Sign in failed.';
+      if (msg.includes('Invalid login') || msg.includes('invalid_grant')) {
+        msg = 'Incorrect email or password. Please try again.';
+      } else if (msg.includes('Email not confirmed')) {
+        msg = 'Email not confirmed. Go to Supabase → Authentication → Providers → Email → turn OFF "Confirm email", then try again.';
+      } else if (msg.includes('fetch') || msg.includes('network')) {
+        msg = 'Connection error. Check your internet and try again.';
+      }
       errEl.textContent = msg;
       errEl.classList.add('show');
       btn.disabled = false;
       btn.textContent = 'Sign In';
+      return;
     }
-    // On success, onAuthStateChange fires showApp()
+    // Success — onAuthStateChange will call showApp()
   } catch(e) {
-    errEl.textContent = 'Connection error: ' + e.message;
+    errEl.textContent = 'Unexpected error: ' + (e.message || e);
     errEl.classList.add('show');
     btn.disabled = false;
     btn.textContent = 'Sign In';
@@ -2200,43 +2202,40 @@ function openPrintWindow(title, htmlBody) {
   /* ── LOGIN SCREEN ── */
   #login-screen {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0; left: 0;
     width: 100vw; height: 100vh;
     background: #0f1117;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 99999;
-    padding: 20px;
-    box-sizing: border-box;
   }
   #login-screen.hidden { display: none !important; }
   .login-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1d2e;
+    border: 1px solid #2d3050;
     border-radius: 16px;
     padding: 40px 36px;
     width: 100%;
     max-width: 400px;
     box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-    position: relative;
-    z-index: 100000;
+    box-sizing: border-box;
   }
-  .login-card .brand { text-align: center; margin-bottom: 32px; }
-  .login-card .brand .icon { font-size: 44px; margin-bottom: 12px; display: block; }
-  .login-card .brand h1 { font-size: 22px; font-weight: 800; color: var(--white); }
-  .login-card .brand p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .login-card .brand { text-align: center; margin-bottom: 28px; }
+  .login-card .brand .icon { font-size: 44px; margin-bottom: 10px; display: block; }
+  .login-card .brand h1 { font-size: 22px; font-weight: 800; color: #ffffff; margin: 0; }
+  .login-card .brand p { font-size: 13px; color: #8892a4; margin-top: 6px; }
   .login-card .form-group { margin-bottom: 16px; }
-  .login-card label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
-  .login-card input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.15s; box-sizing: border-box; }
-  .login-card input:focus { border-color: var(--accent); }
-  .login-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; transition: background 0.15s; }
+  .login-card label { display: block; font-size: 11px; font-weight: 700; color: #8892a4; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .login-card input { width: 100%; background: #222538; border: 1px solid #2d3050; color: #e8eaf0; border-radius: 8px; padding: 12px 14px; font-size: 14px; outline: none; font-family: inherit; box-sizing: border-box; }
+  .login-card input:focus { border-color: #e94560; }
+  .login-btn { width: 100%; background: #e94560; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
   .login-btn:hover:not(:disabled) { background: #c73652; }
   .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .login-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
   .login-error.show { display: block; }
-  #logout-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
-  #logout-btn:hover { color: var(--accent); background: rgba(233,69,96,0.08); }
+  #logout-btn { background: none; border: none; color: #8892a4; font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; }
+  #logout-btn:hover { color: #e94560; }
 </style>
   </head><body>
     <div class="header">
