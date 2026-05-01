@@ -6,6 +6,7 @@
 <title>PwC Beverage Portal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -216,6 +217,7 @@
     <a href="#" class="nav-link" data-page="history">
       <span class="icon">📜</span><span>History</span>
     </a>
+    <a href="#" class="nav-link" data-page="reports"><span class="icon">📅</span><span>Reports</span></a>
     <a href="#" class="nav-link" data-page="settings">
       <span class="icon">⚙️</span><span>Settings</span>
     </a>
@@ -345,26 +347,52 @@
         <div class="card-body">
           <div class="form-row">
             <div class="form-group">
-              <label>Event / Occasion</label>
-              <input type="text" id="evt-name" placeholder="e.g. Client Dinner — 14 May">
+              <label>Function Name</label>
+              <input type="text" id="evt-name" placeholder="e.g. Client Dinner — Deloitte">
             </div>
+            <div class="form-group">
+              <label>Booking ID</label>
+              <input type="text" id="evt-booking-id" placeholder="e.g. BK-20240514">
+            </div>
+          </div>
+          <div class="form-row-3">
             <div class="form-group">
               <label>Date</label>
               <input type="date" id="evt-date">
+            </div>
+            <div class="form-group">
+              <label>Time</label>
+              <input type="time" id="evt-time">
+            </div>
+            <div class="form-group">
+              <label>Room</label>
+              <input type="text" id="evt-room" placeholder="e.g. Level 34 Boardroom">
+            </div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>Pax (guests)</label>
+              <input type="number" id="evt-pax" placeholder="e.g. 24" min="1">
+            </div>
+            <div class="form-group">
+              <label>Package Type</label>
+              <select id="evt-type">
+                <option>Event</option>
+                <option>Boardroom Meeting</option>
+                <option>Cocktail Function</option>
+                <option>Sit Down Dinner</option>
+                <option>Both</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Supervisor</label>
+              <input type="text" id="evt-supervisor" placeholder="Supervisor name">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Recorded By</label>
               <input type="text" id="evt-by" placeholder="Your name">
-            </div>
-            <div class="form-group">
-              <label>Event Type</label>
-              <select id="evt-type">
-                <option>Event</option>
-                <option>Boardroom Meeting</option>
-                <option>Both</option>
-              </select>
             </div>
           </div>
           <div style="background:rgba(41,128,185,0.08);border:1px solid rgba(41,128,185,0.25);border-radius:8px;padding:11px 16px;font-size:12px;color:#5dade2;margin-top:4px">
@@ -441,6 +469,52 @@
           </table>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="page" id="page-reports">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h3 style="font-size:15px;font-weight:700;color:var(--white)">End of Month Reports</h3>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px">Auto-generated on the 1st of each month. Snapshot of full inventory + activity.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="generateMonthlyReport(false)">⚡ Generate This Month's Report</button>
+        <button class="btn btn-success btn-sm" onclick="exportInventoryExcel()">📊 Export Inventory (Excel)</button>
+        <button class="btn btn-outline btn-sm" onclick="printInventory()">🖨️ Print Inventory</button>
+      </div>
+    </div>
+
+    <!-- Quick export bar -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">📦 Current Stock</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="printInventory()">Print / PDF</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportInventoryExcel()">Excel</button>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">🛒 Order History</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="printOrderHistory()">Print / PDF</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportOrdersExcel()">Excel</button>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">📋 Consumption History</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="printConsumptionHistory()">Print / PDF</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportConsumptionExcel()">Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly reports list -->
+    <div class="card">
+      <div class="card-header"><h3>Saved Monthly Reports</h3></div>
+      <div id="reports-list"><div class="loading"><div class="spinner"></div> Loading…</div></div>
     </div>
   </section>
 
@@ -768,6 +842,7 @@ document.querySelectorAll('.nav-link').forEach(link => {
     if (page === 'consumption') loadConsumptionForm();
     if (page === 'history')   loadHistory();
     if (page === 'settings')  loadSettings();
+    if (page === 'reports')    loadReports();
   });
 });
 
@@ -1318,7 +1393,10 @@ function goToStep2(initialCat) {
 
   // Update badge
   $('con-badge-title').textContent = $('evt-name').value;
-  $('con-badge-meta').textContent = $('evt-date').value + ' · ' + $('evt-type').value + ' · ' + $('evt-by').value;
+  const _bookingId = ($('evt-booking-id')||{value:''}).value;
+  const _room = ($('evt-room')||{value:''}).value;
+  const _pax = ($('evt-pax')||{value:''}).value;
+  $('con-badge-meta').textContent = [$('evt-date').value, ($('evt-time')||{value:''}).value, _room, _pax?_pax+' pax':'', $('evt-type').value, $('evt-by').value].filter(Boolean).join(' · ');
 
   renderConCatTabs(initialCat);
   renderConGroup(initialCat);
@@ -1461,8 +1539,14 @@ $('submit-consumption-btn').addEventListener('click', async () => {
   const btn = $('submit-consumption-btn');
   btn.textContent='Saving…'; btn.disabled=true;
   try {
+    const bookingId = ($('evt-booking-id')||{value:''}).value.trim();
+    const room      = ($('evt-room')||{value:''}).value.trim();
+    const pax       = parseInt(($('evt-pax')||{value:''}).value)||null;
+    const supervisor= ($('evt-supervisor')||{value:''}).value.trim();
+    const evtTime   = ($('evt-time')||{value:''}).value;
     const { data: event, error: eErr } = await sb.from('events')
-      .insert({ event_name:name, event_date:date, event_type:type, recorded_by:by })
+      .insert({ event_name:name, event_date:date, event_time:evtTime, event_type:type,
+                recorded_by:by, booking_id:bookingId, room, pax, supervisor })
       .select().single();
     if (eErr) throw new Error(eErr.message);
 
@@ -1746,6 +1830,298 @@ $('confirm-order-btn').addEventListener('click', async () => {
   }
 });
 
+
+// ── REPORTS & PRINT & EXPORT ──────────────────────────────────
+
+// ── Monthly Reports ──────────────────────────────────────────
+async function loadReports() {
+  const el = document.getElementById('reports-list');
+  const { data, error } = await sb.from('monthly_reports')
+    .select('*').order('report_month', { ascending: false });
+  if (error || !data?.length) {
+    el.innerHTML = '<div class="empty" style="padding:32px">No reports yet. Generate your first one above, or it will auto-generate on the 1st of next month.</div>';
+    return;
+  }
+  el.innerHTML = '<div style="padding:0">' + data.map(r => {
+    const snap = r.snapshot || {};
+    const totalVal = snap.total_value ? '$' + Number(snap.total_value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') : '—';
+    const itemCount = snap.item_count || '—';
+    const orderCount = snap.order_count || '—';
+    const eventCount = snap.event_count || '—';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--white)">${r.report_label||r.report_month}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">
+          Generated ${new Date(r.generated_at).toLocaleString('en-AU')}
+          ${r.is_auto ? ' · <span style="color:var(--green)">Auto</span>' : ' · Manual'}
+          &nbsp;·&nbsp; Portfolio: ${totalVal}
+          &nbsp;·&nbsp; ${itemCount} items &nbsp;·&nbsp; ${orderCount} orders &nbsp;·&nbsp; ${eventCount} events
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="printMonthlyReport('${r.report_month}')">🖨️ Print / PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="exportMonthlyExcel('${r.report_month}')">📊 Excel</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+async function generateMonthlyReport(isAuto) {
+  const now = new Date();
+  let targetDate = isAuto
+    ? new Date(now.getFullYear(), now.getMonth() - 1, 1)  // previous month
+    : new Date(now.getFullYear(), now.getMonth(), 1);      // current month
+
+  const monthKey = targetDate.getFullYear() + '-' + String(targetDate.getMonth()+1).padStart(2,'0');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const label = monthNames[targetDate.getMonth()] + ' ' + targetDate.getFullYear();
+
+  await fetchItems();
+  const { data: orders } = await sb.from('orders').select('*');
+  const { data: events } = await sb.from('events').select('*');
+
+  const snapshot = {
+    total_value: items.reduce((s,i) => s + Math.max(0,soh(i))*i.luc, 0),
+    item_count: items.length,
+    in_stock: items.filter(i => soh(i) > 0).length,
+    out_of_stock: items.filter(i => soh(i) <= 0).length,
+    order_count: orders?.length || 0,
+    event_count: events?.length || 0,
+    items: items.map(i => ({
+      id: i.id, name: i.name, category: i.category,
+      price_tier: i.price_tier, supplier: i._supplier||i.supplier,
+      luc: i.luc, opening_soh: i.opening_soh,
+      orders_in: i.orders_in, consumed: i.consumed,
+      current_soh: Math.max(0, soh(i)),
+      soh_value: Math.max(0, soh(i)) * i.luc
+    }))
+  };
+
+  const { error } = await sb.from('monthly_reports').upsert({
+    report_month: monthKey,
+    report_label: label,
+    is_auto: isAuto,
+    generated_by: isAuto ? 'Auto' : ($('current-user').value || 'Manual'),
+    snapshot
+  }, { onConflict: 'report_month' });
+
+  if (error) { toast('Error saving report: ' + error.message, true); return; }
+  toast('✅ Report saved: ' + label);
+  loadReports();
+}
+
+async function checkAutoMonthlyReport() {
+  const now = new Date();
+  if (now.getDate() === 1) {  // It's the 1st — check if last month's report exists
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthKey = lastMonth.getFullYear() + '-' + String(lastMonth.getMonth()+1).padStart(2,'0');
+    const { count } = await sb.from('monthly_reports')
+      .select('*', { count:'exact', head:true }).eq('report_month', monthKey);
+    if (!count) { await generateMonthlyReport(true); }
+  }
+}
+
+// ── PRINT FUNCTIONS ──────────────────────────────────────────
+function openPrintWindow(title, htmlBody) {
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head>
+    <title>${title}</title>
+    <style>
+      body { font-family: Calibri, Arial, sans-serif; font-size: 12px; color: #111; margin: 20px 32px; }
+      h1 { font-size: 18px; margin-bottom: 4px; }
+      h2 { font-size: 14px; color: #444; margin: 16px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+      h3 { font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 6px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+      th { background: #1a1d2e; color: #fff; padding: 7px 10px; text-align: left; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+      td { padding: 6px 10px; border-bottom: 1px solid #e5e5e5; }
+      tr:nth-child(even) td { background: #f8f8f8; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #1a1d2e; }
+      .logo { font-size: 20px; font-weight: 900; color: #1a1d2e; }
+      .meta { text-align: right; color: #666; font-size: 11px; }
+      .badge-ok { color: #27ae60; font-weight: 700; }
+      .badge-low { color: #f39c12; font-weight: 700; }
+      .badge-out { color: #e94560; font-weight: 700; }
+      .section-header { background: #1a1d2e; color: #fff; padding: 6px 10px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
+      .summary-box { background: #f0f3f4; border: 1px solid #ddd; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
+      .summary-item { font-size: 12px; } .summary-item strong { display: block; font-size: 16px; }
+      @media print { body { margin: 10px 16px; } }
+    </style>
+  </head><body>
+    <div class="header">
+      <div><div class="logo">🍷 PwC Sydney — Beverage Portal</div><div style="font-size:13px;margin-top:2px">${title}</div></div>
+      <div class="meta">Generated: ${new Date().toLocaleString('en-AU')}<br>hi-its-aayush.github.io/pwc_bev</div>
+    </div>
+    ${htmlBody}
+    <script>window.onload = () => { window.print(); }<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+function printInventory() {
+  const LAYOUT = [
+    {label:'LUXE', tier:'Luxe $65+', cats:['Champagne','Sparkling','White','Red']},
+    {label:'CLIENT', tier:'Client $30-65', cats:['Champagne','Sparkling','White','Rose','Red']},
+    {label:'STAFF', tier:'Staff <$30', cats:['Sparkling','White','Rose','Red','Dessert Wine']},
+    {label:'NON-ALCOHOLIC', tier:'Non-Alc', cats:['Non-Alc Wine','Non-Alc Cocktail']},
+    {label:'BEER', tier:null, cats:['Beer']},
+    {label:'SOFT DRINKS', tier:null, cats:['Soft Drink','Water']},
+    {label:'JUICES', tier:null, cats:['Juice']},
+    {label:'SPIRITS & MIXERS', tier:null, cats:['Spirit','Mixer']},
+  ];
+  const totalVal = items.reduce((s,i)=>s+Math.max(0,soh(i))*i.luc,0);
+  const inStock = items.filter(i=>soh(i)>0).length;
+  const outStock = items.filter(i=>soh(i)<=0).length;
+  let html = `<div class="summary-box">
+    <div class="summary-item"><strong>$${totalVal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}</strong>Portfolio Value</div>
+    <div class="summary-item"><strong>${items.length}</strong>Total Items</div>
+    <div class="summary-item"><strong class="badge-ok">${inStock}</strong>In Stock</div>
+    <div class="summary-item"><strong class="badge-out">${outStock}</strong>Out of Stock</div>
+  </div>`;
+  LAYOUT.forEach(sec => {
+    const secItems = items.filter(i => {
+      if (sec.tier && i.price_tier !== sec.tier) return false;
+      return sec.cats.includes(i.category);
+    });
+    if (!secItems.length) return;
+    html += `<div class="section-header">${sec.label}${sec.tier?' — '+sec.tier:''}</div>
+    <table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>Opening</th><th>Ordered In</th><th>Consumed</th><th>Current SOH</th><th>Status</th></tr></thead><tbody>`;
+    secItems.forEach(i => {
+      const s = Math.max(0, soh(i));
+      const cls = s<=0?'badge-out':s<=3?'badge-low':'badge-ok';
+      const status = s<=0?'OUT':s<=3?'LOW':'OK';
+      html += `<tr><td>${i.name}</td><td>${i.vintage||''}</td><td>${i._supplier||''}</td><td>${Math.round(i.opening_soh||0)}</td><td>${Math.round(i.orders_in||0)}</td><td>${Math.round(i.consumed||0)}</td><td><strong>${Math.round(s)}</strong></td><td class="${cls}">${status}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  });
+  openPrintWindow('Inventory — ' + new Date().toLocaleDateString('en-AU'), html);
+}
+
+async function printOrderHistory() {
+  const { data: orders } = await sb.from('orders').select('*, order_lines(*, items(name,category))').order('order_date', {ascending:false});
+  let html = `<h2>Order History</h2>`;
+  if (!orders?.length) { html += '<p>No orders recorded.</p>'; }
+  else orders.forEach(o => {
+    const total = (o.order_lines||[]).reduce((s,l)=>s+(l.quantity||0)*(l.unit_cost||0),0);
+    html += `<h3>${o.order_date} — ${o.ordered_by||'Unknown'} — $${total.toFixed(2)}</h3>
+    <table><thead><tr><th>Item</th><th>Category</th><th>Qty (units)</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody>`;
+    (o.order_lines||[]).forEach(l => {
+      html += `<tr><td>${l.items?.name||'—'}</td><td>${l.items?.category||''}</td><td>${l.quantity}</td><td>$${(l.unit_cost||0).toFixed(2)}</td><td>$${((l.quantity||0)*(l.unit_cost||0)).toFixed(2)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  });
+  openPrintWindow('Order History', html);
+}
+
+async function printConsumptionHistory() {
+  const { data: events } = await sb.from('events').select('*, event_lines(*, items(name,category,is_complimentary))').order('event_date', {ascending:false});
+  let html = '<h2>Consumption History</h2>';
+  if (!events?.length) { html += '<p>No events recorded.</p>'; }
+  else events.forEach(e => {
+    html += `<h3>${e.event_date}${e.event_time?' '+e.event_time:''} — ${e.event_name}</h3>
+    <table style="font-size:10px;margin-bottom:4px"><tr><td><b>Booking ID:</b> ${e.booking_id||'—'}</td><td><b>Room:</b> ${e.room||'—'}</td><td><b>Pax:</b> ${e.pax||'—'}</td><td><b>Type:</b> ${e.event_type||'—'}</td><td><b>Supervisor:</b> ${e.supervisor||'—'}</td><td><b>Recorded by:</b> ${e.recorded_by||'—'}</td></tr></table>
+    <table><thead><tr><th>Item</th><th>Category</th><th>Qty Consumed</th><th>Complimentary</th></tr></thead><tbody>`;
+    (e.event_lines||[]).forEach(l => {
+      html += `<tr><td>${l.items?.name||'—'}</td><td>${l.items?.category||''}</td><td>${l.quantity}</td><td>${l.items?.is_complimentary?'Yes':'—'}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  });
+  openPrintWindow('Consumption History', html);
+}
+
+async function printMonthlyReport(monthKey) {
+  const { data: r } = await sb.from('monthly_reports').select('*').eq('report_month', monthKey).single();
+  if (!r) { toast('Report not found', true); return; }
+  const snap = r.snapshot || {};
+  const snapItems = snap.items || [];
+  const totalVal = snap.total_value ? '$' + Number(snap.total_value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',') : '—';
+
+  let html = `<div class="summary-box">
+    <div class="summary-item"><strong>${totalVal}</strong>Portfolio Value</div>
+    <div class="summary-item"><strong>${snap.item_count||0}</strong>Total Items</div>
+    <div class="summary-item"><strong class="badge-ok">${snap.in_stock||0}</strong>In Stock</div>
+    <div class="summary-item"><strong class="badge-out">${snap.out_of_stock||0}</strong>Out of Stock</div>
+    <div class="summary-item"><strong>${snap.order_count||0}</strong>Orders</div>
+    <div class="summary-item"><strong>${snap.event_count||0}</strong>Events</div>
+  </div>
+  <table><thead><tr><th>Item</th><th>Category</th><th>Tier</th><th>Supplier</th><th>Opening SOH</th><th>Ordered In</th><th>Consumed</th><th>Closing SOH</th><th>Status</th></tr></thead><tbody>`;
+  snapItems.forEach(i => {
+    const cls = i.current_soh<=0?'badge-out':i.current_soh<=3?'badge-low':'badge-ok';
+    const status = i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK';
+    html += `<tr><td>${i.name}</td><td>${i.category}</td><td>${i.price_tier}</td><td>${i.supplier||'—'}</td><td>${Math.round(i.opening_soh||0)}</td><td>${Math.round(i.orders_in||0)}</td><td>${Math.round(i.consumed||0)}</td><td><strong>${Math.round(i.current_soh||0)}</strong></td><td class="${cls}">${status}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  openPrintWindow('Stocktake Report — ' + (r.report_label||monthKey), html);
+}
+
+// ── EXCEL EXPORTS ────────────────────────────────────────────
+function exportInventoryExcel() {
+  if (typeof XLSX === 'undefined') { toast('Excel library loading — try again in a moment', true); return; }
+  const ws_data = [['Item','Category','Price Tier','Supplier','Vintage','Opening SOH','Ordered In','Consumed','Current SOH','Status']];
+  items.forEach(i => {
+    const s = Math.max(0, soh(i));
+    ws_data.push([i.name, i.category, i.price_tier, i._supplier||i.supplier||'', i.vintage||'', Math.round(i.opening_soh||0), Math.round(i.orders_in||0), Math.round(i.consumed||0), Math.round(s), s<=0?'OUT':s<=3?'LOW':'OK']);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols'] = [{wch:40},{wch:16},{wch:16},{wch:18},{wch:8},{wch:12},{wch:12},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+  XLSX.writeFile(wb, 'PwC_Beverage_Inventory_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast('📊 Inventory exported to Excel');
+}
+
+async function exportOrdersExcel() {
+  if (typeof XLSX === 'undefined') { toast('Excel library loading — try again', true); return; }
+  const { data: orders } = await sb.from('orders').select('*, order_lines(*, items(name,category))').order('order_date',{ascending:false});
+  const rows = [['Order Date','Ordered By','Item','Category','Qty (units)','Unit Cost','Line Total','Notes']];
+  (orders||[]).forEach(o => {
+    (o.order_lines||[]).forEach(l => {
+      rows.push([o.order_date, o.ordered_by||'', l.items?.name||'', l.items?.category||'', l.quantity, l.unit_cost, (l.quantity||0)*(l.unit_cost||0), o.notes||'']);
+    });
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:16},{wch:40},{wch:16},{wch:12},{wch:12},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+  XLSX.writeFile(wb, 'PwC_Orders_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast('📊 Orders exported to Excel');
+}
+
+async function exportConsumptionExcel() {
+  if (typeof XLSX === 'undefined') { toast('Excel library loading — try again', true); return; }
+  const { data: events } = await sb.from('events').select('*, event_lines(*, items(name,category,is_complimentary))').order('event_date',{ascending:false});
+  const rows = [['Event Name','Booking ID','Date','Time','Room','Pax','Type','Supervisor','Recorded By','Item','Category','Qty Consumed','Complimentary']];
+  (events||[]).forEach(e => {
+    (e.event_lines||[]).forEach(l => {
+      rows.push([e.event_name, e.booking_id||'', e.event_date, e.event_time||'', e.room||'', e.pax||'', e.event_type||'', e.supervisor||'', e.recorded_by||'', l.items?.name||'', l.items?.category||'', l.quantity, l.items?.is_complimentary?'Yes':'No']);
+    });
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:28},{wch:14},{wch:12},{wch:8},{wch:20},{wch:6},{wch:18},{wch:16},{wch:16},{wch:40},{wch:16},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Consumption');
+  XLSX.writeFile(wb, 'PwC_Consumption_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast('📊 Consumption exported to Excel');
+}
+
+async function exportMonthlyExcel(monthKey) {
+  if (typeof XLSX === 'undefined') { toast('Excel library loading — try again', true); return; }
+  const { data: r } = await sb.from('monthly_reports').select('*').eq('report_month', monthKey).single();
+  if (!r) { toast('Report not found', true); return; }
+  const snap = r.snapshot || {};
+  const snapItems = snap.items || [];
+  const rows = [['Item','Category','Price Tier','Supplier','Opening SOH','Ordered In','Consumed','Closing SOH','Status']];
+  snapItems.forEach(i => {
+    rows.push([i.name, i.category, i.price_tier, i.supplier||'', Math.round(i.opening_soh||0), Math.round(i.orders_in||0), Math.round(i.consumed||0), Math.round(i.current_soh||0), i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK']);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:42},{wch:18},{wch:16},{wch:18},{wch:12},{wch:12},{wch:12},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws, r.report_label||monthKey);
+  XLSX.writeFile(wb, 'PwC_Stocktake_' + monthKey + '.xlsx');
+  toast('📊 Report exported to Excel');
+}
+
+// ── UPDATE CONSUMPTION SUBMIT to save new fields ─────────────
 // ── START ────────────────────────────────────────────────────
 init();
 </script>
