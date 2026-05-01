@@ -283,75 +283,133 @@
 
   <!-- ORDERS -->
   <section class="page" id="page-orders">
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header"><h3>Order Details</h3></div>
-      <div class="card-body">
-        <div class="form-row-3">
-          <div class="form-group"><label>Order Date</label><input type="date" id="ord-date"></div>
-          <div class="form-group"><label>Ordered By</label><input type="text" id="ord-by" placeholder="Your name"></div>
-          <div class="form-group"><label>Notes</label><input type="text" id="ord-notes" placeholder="Optional notes"></div>
+
+    <!-- STEP 1: Supplier Selection -->
+    <div id="ord-step1">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Select a supplier to begin your order.</p>
+      <div id="supplier-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px"></div>
+    </div>
+
+    <!-- STEP 2: Order Form -->
+    <div id="ord-step2" style="display:none">
+      <!-- Header bar -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="backToSuppliers()">← Back</button>
+        <div id="ord-supplier-badge" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;flex:1">
+          <div>
+            <div id="ord-sup-name" style="font-weight:700;font-size:14px;color:var(--white)"></div>
+            <div id="ord-sup-meta" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+          </div>
         </div>
-        <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.3);border-radius:7px;padding:10px 14px;font-size:12px;color:#f39c12;margin-top:4px">
-          📦 <strong>Order in cartons.</strong> Inventory is updated in individual units automatically.
-          Wine/Sparkling = 12 bottles/carton · Beer = 24 cans/carton · Soft drink 330ml = 24/carton · 1.25L = 12/carton · Water 300ml = 24/carton
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="ord-total-label" style="font-size:13px;color:var(--muted);white-space:nowrap">Total: $0.00</span>
+          <button class="btn btn-success" id="submit-order-btn">📋 Preview Email</button>
         </div>
       </div>
-    </div>
 
-    <div style="margin-bottom:16px">
-      <input id="ord-search" type="text" placeholder="🔍  Search items to order…"
-        oninput="filterOrderRows()"
-        style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:10px 14px;font-size:13px;outline:none">
-    </div>
-    <div id="order-sections" style="margin-top:0"></div>
+      <!-- Order meta -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body" style="padding:14px 18px">
+          <div class="form-row-3">
+            <div class="form-group" style="margin:0"><label>Order Date</label><input type="date" id="ord-date"></div>
+            <div class="form-group" style="margin:0"><label>Ordered By</label><input type="text" id="ord-by" placeholder="Your name"></div>
+            <div class="form-group" style="margin:0"><label>Delivery Note (optional)</label><input type="text" id="ord-notes" placeholder="e.g. Deliver next Tuesday"></div>
+          </div>
+        </div>
+      </div>
 
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">
-      <span id="ord-total-label" style="font-size:13px;color:var(--muted)">Est. order total: $0.00</span>
-      <button class="btn btn-success" id="submit-order-btn">📋 Preview Emails & Submit</button>
+      <!-- Hint bar -->
+      <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.25);border-radius:8px;padding:10px 16px;font-size:12px;color:#f39c12;margin-bottom:16px">
+        📦 Enter quantities in <strong>cartons</strong>. Inventory updates in individual units automatically.
+        &nbsp;·&nbsp; Wine = 12 bottles &nbsp;·&nbsp; Beer = 24 cans &nbsp;·&nbsp; Soft drink 330ml = 24 · 1.25L = 12 &nbsp;·&nbsp; Water 300ml = 24
+      </div>
+
+      <!-- Items grouped by category -->
+      <div id="ord-item-groups"></div>
+
+      <!-- Bottom total bar -->
+      <div style="position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;border-radius:0 0 10px 10px">
+        <span style="font-size:13px;color:var(--muted)" id="ord-total-bottom">Estimated total: $0.00</span>
+        <button class="btn btn-success" onclick="document.getElementById('submit-order-btn').click()">📋 Preview Email & Submit</button>
+      </div>
     </div>
   </section>
 
   <!-- CONSUMPTION -->
   <section class="page" id="page-consumption">
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header"><h3>Event Details</h3></div>
-      <div class="card-body">
-        <div class="form-row">
-          <div class="form-group"><label>Event / Occasion</label><input type="text" id="evt-name" placeholder="e.g. Client Dinner 14 May"></div>
-          <div class="form-group"><label>Date</label><input type="date" id="evt-date"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Recorded By</label><input type="text" id="evt-by" placeholder="Your name"></div>
-          <div class="form-group"><label>Event Type</label>
-            <select id="evt-type">
-              <option>Event</option><option>Boardroom Meeting</option><option>Both</option>
-            </select>
+
+    <!-- STEP 1: Event Details -->
+    <div id="con-step1">
+      <div class="card">
+        <div class="card-header"><h3>Event Details</h3></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Event / Occasion</label>
+              <input type="text" id="evt-name" placeholder="e.g. Client Dinner — 14 May">
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="evt-date">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Recorded By</label>
+              <input type="text" id="evt-by" placeholder="Your name">
+            </div>
+            <div class="form-group">
+              <label>Event Type</label>
+              <select id="evt-type">
+                <option>Event</option>
+                <option>Boardroom Meeting</option>
+                <option>Both</option>
+              </select>
+            </div>
+          </div>
+          <div style="background:rgba(41,128,185,0.08);border:1px solid rgba(41,128,185,0.25);border-radius:8px;padding:11px 16px;font-size:12px;color:#5dade2;margin-top:4px">
+            💧 Soft drinks, waters, and juices are <strong>complimentary</strong> for all clients across events and boardroom meetings.
+          </div>
+          <div style="margin-top:16px;display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" id="con-next-btn">Continue to Consumption →</button>
           </div>
         </div>
-        <div style="background:rgba(41,128,185,0.08);border:1px solid rgba(41,128,185,0.3);border-radius:7px;padding:10px 14px;font-size:12px;color:#2980b9">
-          💧 Soft drinks, waters, and juices are <strong>complimentary</strong> for all clients across events and boardroom meetings. Log them in the blue-highlighted rows below.
-        </div>
+      </div>
+
+      <!-- Quick category shortcuts -->
+      <div style="margin-top:20px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Or jump straight to a category</div>
+        <div id="con-cat-shortcuts" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
     </div>
 
-    <div style="margin-bottom:16px">
-      <input id="con-search" type="text" placeholder="🔍  Search items…"
-        oninput="filterConRows()"
-        style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:10px 14px;font-size:13px;outline:none">
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <h3>Log Consumption</h3>
-        <button class="btn btn-primary" id="submit-consumption-btn">✅ Submit Consumption</button>
+    <!-- STEP 2: Consumption Items -->
+    <div id="con-step2" style="display:none">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="backToEventDetails()">← Back</button>
+        <div id="con-event-badge" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px">
+          <div id="con-badge-title" style="font-weight:700;font-size:14px;color:var(--white)"></div>
+          <div id="con-badge-meta" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+        </div>
+        <button class="btn btn-primary" id="submit-consumption-btn">✅ Submit</button>
       </div>
-      <div class="table-wrap">
-        <table class="order-table">
-          <thead><tr>
-            <th>Item</th><th>Category</th><th>Tier</th>
-            <th>Current SOH</th><th>Complimentary?</th><th class="qty-cell">QTY Consumed</th>
-          </tr></thead>
-          <tbody id="con-body"><tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
+
+      <!-- Category tabs -->
+      <div id="con-cat-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+
+      <!-- Items for active category -->
+      <div id="con-active-group"></div>
+
+      <!-- Summary of what's been entered -->
+      <div id="con-summary" style="margin-top:12px;display:none">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Items Entered So Far</div>
+        <div id="con-summary-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+
+      <!-- Sticky submit -->
+      <div style="position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 18px;display:flex;justify-content:flex-end;margin-top:16px;border-radius:0 0 10px 10px">
+        <button class="btn btn-primary" onclick="document.getElementById('submit-consumption-btn').click()">✅ Submit Consumption</button>
       </div>
     </div>
   </section>
@@ -1002,53 +1060,162 @@ $('save-edit-btn').addEventListener('click', async () => {
 });
 
 // ── ORDER FORM ──────────────────────────────────────────────
+let activeSupplier = null;
+
 function loadOrderForm() {
   $('ord-date').value = today();
   $('ord-by').value = $('current-user').value || '';
-  renderOrderForm();
+  showStep1();
 }
 
-function renderOrderForm() {
+function showStep1() {
+  $('ord-step1').style.display = 'block';
+  $('ord-step2').style.display = 'none';
+  activeSupplier = null;
+  renderSupplierCards();
+}
+
+function backToSuppliers() {
+  showStep1();
+}
+
+function renderSupplierCards() {
+  const cardData = [
+    {
+      key: 'Sydney Wines',
+      contact: 'Antony',
+      email: 'antony@sydneywine.com.au',
+      icon: '🍷',
+      color: '#1a5276',
+      desc: 'Wines · Champagne · Sparkling · Beer · Soft Drinks · Spirits · Mixers',
+    },
+    {
+      key: 'Noah Juices',
+      contact: 'Mark',
+      email: 'orders@baco.com.au',
+      icon: '🥤',
+      color: '#1e6b40',
+      desc: 'Orange · Apple · Carrot Apple Ginger · Green Juice',
+    },
+    {
+      key: "Young Henry's",
+      contact: 'Ben Stockton',
+      email: 'stocko@younghenrys.com',
+      icon: '🍺',
+      color: '#7d5a00',
+      desc: 'Young Henry Newtowner 330ml',
+    },
+  ];
+
+  $('supplier-cards').innerHTML = cardData.map(sup => {
+    const supItems = items.filter(i => (i._supplier||getSupplierName(i.name)) === sup.key);
+    const inStock = supItems.filter(i => soh(i) > 0).length;
+    const outCount = supItems.filter(i => soh(i) <= 0).length;
+    return `<div onclick="selectSupplier('${sup.key}')"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
+             overflow:hidden;cursor:pointer;transition:all 0.15s;user-select:none"
+      onmouseover="this.style.borderColor='${sup.color}';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <div style="background:${sup.color};padding:16px 20px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">${sup.icon}</span>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:#fff">${sup.key}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px">${sup.contact} · ${sup.email}</div>
+        </div>
+      </div>
+      <div style="padding:14px 20px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${sup.desc}</div>
+        <div style="display:flex;gap:10px">
+          <span style="font-size:11px;background:rgba(39,174,96,0.12);color:#27ae60;padding:3px 10px;border-radius:20px;font-weight:600">${inStock} in stock</span>
+          ${outCount > 0 ? `<span style="font-size:11px;background:rgba(233,69,96,0.12);color:#e94560;padding:3px 10px;border-radius:20px;font-weight:600">${outCount} out of stock</span>` : ''}
+        </div>
+      </div>
+      <div style="padding:10px 20px 14px">
+        <div style="background:${sup.color};color:#fff;text-align:center;border-radius:7px;padding:9px;font-size:13px;font-weight:700">
+          Place Order →
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectSupplier(supKey) {
+  activeSupplier = supKey;
+  $('ord-step1').style.display = 'none';
+  $('ord-step2').style.display = 'block';
+
+  const info = SUPPLIERS[supKey] || { contact: supKey, email: '' };
+  $('ord-sup-name').textContent = supKey;
+  $('ord-sup-meta').textContent = info.contact + ' · ' + info.email;
+
+  renderOrderItems();
+  updateOrderTotal();
+}
+
+function renderOrderItems() {
+  const supItems = items.filter(i => (i._supplier||getSupplierName(i.name)) === activeSupplier);
+
+  // Group by category
   const groups = {};
-  items.forEach(i => {
-    const sup = i._supplier || getSupplierName(i.name);
-    if (!groups[sup]) groups[sup] = [];
-    groups[sup].push(i);
+  supItems.forEach(i => {
+    // For soft drinks, split by size
+    let grpKey = i.category;
+    if (i.category === 'Soft Drink') {
+      grpKey = i.name.toLowerCase().includes('1.25') ? 'Soft Drink · 1.25L' : 'Soft Drink · 330ml';
+    }
+    if (!groups[grpKey]) groups[grpKey] = [];
+    groups[grpKey].push(i);
   });
-  const sectionsEl = $('order-sections');
-  sectionsEl.innerHTML = Object.entries(groups).map(([sup, supItems]) => {
-    const info = SUPPLIERS[sup] || { contact: sup, email: '' };
-    const rows = supItems.map(i => {
-      const cs = cartonSize(i);
+
+  const groupOrder = ['Champagne','Sparkling','White','Rose','Red','Dessert Wine',
+    'Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink · 1.25L','Soft Drink · 330ml',
+    'Water','Juice','Spirit','Mixer'];
+
+  const sortedGroups = Object.keys(groups).sort((a,b) => {
+    const ai = groupOrder.indexOf(a), bi = groupOrder.indexOf(b);
+    return (ai===-1?99:ai) - (bi===-1?99:bi);
+  });
+
+  $('ord-item-groups').innerHTML = sortedGroups.map(grp => {
+    const grpItems = groups[grp];
+    const rows = grpItems.map(i => {
       const s = soh(i);
+      const cs = cartonSize(i);
       const sColor = s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)';
-      return `<tr>
-        <td style="font-weight:500;max-width:240px">${i.name}</td>
-        <td><span class="badge badge-cat">${i.category}</span></td>
-        <td class="td-center" style="font-weight:700;color:${sColor}">${Math.round(s)}</td>
-        <td style="font-size:11px;color:var(--muted)">${cs.label}</td>
-        <td class="td-center" style="background:rgba(243,156,18,0.06)">
+      const vt = i.vintage ? ' <span style="color:var(--muted);font-size:11px">'+i.vintage+'</span>' : '';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px 14px;font-weight:500;max-width:260px">${i.name}${vt}</td>
+        <td style="padding:10px 14px;text-align:center;font-weight:700;color:${sColor}">${Math.max(0,Math.round(s))}</td>
+        <td style="padding:10px 14px;font-size:11px;color:var(--muted);text-align:center">${cs.label}</td>
+        <td style="padding:10px 14px;text-align:center;background:rgba(243,156,18,0.04)">
           <input type="number" id="qty-ord-${i.id}" min="0" step="1" placeholder="0"
-            oninput="updateOrderTotal()" onchange="updateOrderTotal()">
+            style="width:64px;background:var(--surface);border:1.5px solid var(--border);
+                   color:var(--white);border-radius:6px;padding:6px 8px;font-size:14px;
+                   font-weight:700;text-align:center"
+            oninput="updateOrderTotal()" onchange="updateOrderTotal()"
+            onfocus="this.style.borderColor='#f39c12'" onblur="this.style.borderColor='var(--border)'">
         </td>
-        <td class="td-num" id="line-${i.id}" style="color:var(--muted)">—</td>
+        <td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--muted);min-width:80px" id="line-${i.id}">—</td>
       </tr>`;
     }).join('');
-    return `<div style="margin-bottom:20px">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px 8px 0 0;padding:10px 16px;display:flex;align-items:center;gap:10px">
-        <span style="font-weight:700;color:var(--white)">🏢 ${sup}</span>
-        <span style="font-size:12px;color:var(--muted)">${info.contact} · ${info.email}</span>
+
+    return `<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+      <div style="background:var(--surface2);padding:9px 16px;font-size:11px;font-weight:700;
+                  color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;
+                  display:flex;align-items:center;justify-content:space-between">
+        <span>${grp}</span>
+        <span style="color:var(--border);font-weight:400">${grpItems.length} item${grpItems.length!==1?'s':''}</span>
       </div>
-      <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
-        <table class="order-table" style="margin:0">
-          <thead><tr>
-            <th>Item</th><th>Category</th><th class="td-center">SOH</th>
-            <th>Carton Size</th><th class="td-center" style="background:rgba(243,156,18,0.1)">Cartons to Order</th>
-            <th class="td-num">Est. Cost</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:rgba(255,255,255,0.02)">
+          <th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Item</th>
+          <th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">SOH</th>
+          <th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Carton</th>
+          <th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;background:rgba(243,156,18,0.06)">Qty to Order</th>
+          <th style="padding:7px 14px;text-align:right;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Est. Cost</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
   }).join('');
 }
@@ -1056,15 +1223,18 @@ function renderOrderForm() {
 function updateOrderTotal() {
   let total = 0;
   items.forEach(i => {
-    const el = $('qty-ord-' + i.id); if (!el) return;
+    const el = document.getElementById('qty-ord-' + i.id);
+    if (!el) return;
     const cartons = parseFloat(el.value)||0;
-    const units = cartons * cartonSize(i).qty;
-    const line = units * i.luc;
+    const line = cartons * cartonSize(i).qty * i.luc;
     total += line;
-    const lineEl = $('line-' + i.id);
+    const lineEl = document.getElementById('line-' + i.id);
     if (lineEl) lineEl.textContent = cartons > 0 ? fmt(line) : '—';
+    if (cartons > 0) el.style.borderColor = '#f39c12';
   });
-  $('ord-total-label').textContent = 'Est. order total: ' + fmt(total);
+  const label = 'Est. total: ' + fmt(total);
+  $('ord-total-label').textContent = label;
+  $('ord-total-bottom').textContent = 'Estimated total: ' + fmt(total);
 }
 
 $('submit-order-btn').addEventListener('click', () => {
@@ -1072,130 +1242,203 @@ $('submit-order-btn').addEventListener('click', () => {
   const by    = $('ord-by').value.trim();
   const notes = $('ord-notes').value.trim();
   if (!date || !by) { toast('Please enter order date and your name', true); return; }
+  if (!activeSupplier)  { toast('No supplier selected', true); return; }
+
   const lines = [];
   items.forEach(i => {
-    const el = $('qty-ord-' + i.id); if (!el) return;
+    const el = document.getElementById('qty-ord-' + i.id);
+    if (!el) return;
     const cartons = parseFloat(el.value)||0;
-    if (cartons > 0) {
-      const units = cartons * cartonSize(i).qty;
-      lines.push({ item: i, cartons, units });
-    }
+    if (cartons > 0) lines.push({ item: i, cartons, units: cartons * cartonSize(i).qty });
   });
   if (!lines.length) { toast('No quantities entered', true); return; }
-  const bySupplier = {};
-  lines.forEach(l => {
-    const sup = l.item._supplier || getSupplierName(l.item.name);
-    if (!bySupplier[sup]) bySupplier[sup] = [];
-    bySupplier[sup].push(l);
-  });
-  pendingOrder = { date, by, notes, lines, bySupplier };
-  buildEmailModal(bySupplier, date, by, notes);
+
+  pendingOrder = { date, by, notes, lines, bySupplier: { [activeSupplier]: lines } };
+  buildEmailModal({ [activeSupplier]: lines }, date, by, notes);
   $('modal-email').classList.add('open');
 });
 
-function buildEmailModal(bySupplier, date, by, notes) {
-  const supKeys = Object.keys(bySupplier);
-  activeEmailSupplier = supKeys[0];
-  $('email-tabs').innerHTML = supKeys.map(sup =>
-    `<button onclick="switchEmailTab(this,'${sup}')" style="flex:1;padding:7px 12px;border-radius:6px;background:${sup===activeEmailSupplier?'var(--surface)':'none'};border:none;color:${sup===activeEmailSupplier?'var(--white)':'var(--muted)'};font-size:13px;font-weight:500;cursor:pointer">${sup}</button>`
-  ).join('');
-  window._emailTexts = {};
-  supKeys.forEach(sup => {
-    const info = SUPPLIERS[sup] || { contact: sup };
-    const supLines = bySupplier[sup];
-    const grouped = {};
-    supLines.forEach(l => { const c = l.item.category; if (!grouped[c]) grouped[c]=[]; grouped[c].push(l); });
-    let body = 'Hi ' + info.contact + ',\n\nCan we please have the following delivered to us next week:\n';
-    if (notes) body += '\nNote: ' + notes + '\n';
-    body += '\n';
-    Object.entries(grouped).forEach(([cat, catLines]) => {
-      body += cat + ':\n';
-      catLines.forEach(l => {
-        body += '  ' + l.cartons + ' x carton' + (l.cartons!==1?'s':'') + ' — ' + l.item.name + ' (' + l.units + ' units)\n';
-      });
-      body += '\n';
-    });
-    const sub = supLines.reduce((s,l)=>s+l.units*l.item.luc,0);
-    if (sub>0) body += 'Estimated subtotal: ' + fmt(sub) + '\n\n';
-    body += 'Many thanks,\n' + by + '\nPwC Sydney';
-    window._emailTexts[sup] = body;
-  });
-  $('email-preview-text').textContent = window._emailTexts[activeEmailSupplier]||'';
-}
-
-function switchEmailTab(btn, sup) {
-  activeEmailSupplier = sup;
-  document.querySelectorAll('#email-tabs button').forEach(b => {
-    b.style.background = b===btn?'var(--surface)':'none';
-    b.style.color = b===btn?'var(--white)':'var(--muted)';
-  });
-  $('email-preview-text').textContent = window._emailTexts[sup]||'';
-}
-
-$('copy-email-btn').addEventListener('click', () => {
-  const text = $('email-preview-text').textContent;
-  navigator.clipboard.writeText(text)
-    .then(()=>toast('📋 Email text copied!'))
-    .catch(()=>{
-      const ta=document.createElement('textarea');ta.value=text;
-      document.body.appendChild(ta);ta.select();document.execCommand('copy');
-      document.body.removeChild(ta);toast('📋 Copied!');
-    });
-});
-
-$('confirm-order-btn').addEventListener('click', async () => {
-  if (!pendingOrder) return;
-  const { date, by, notes, lines } = pendingOrder;
-  const btn = $('confirm-order-btn');
-  btn.textContent='Saving…'; btn.disabled=true;
-  try {
-    const { data: order, error: oErr } = await sb.from('orders')
-      .insert({ order_date:date, ordered_by:by, notes, status:'submitted' })
-      .select().single();
-    if (oErr) throw new Error('Order save failed: ' + oErr.message);
-    const { error: lErr } = await sb.from('order_lines').insert(lines.map(l=>({
-      order_id:order.id, item_id:l.item.id, quantity:l.units, unit_cost:l.item.luc
-    })));
-    if (lErr) throw new Error('Lines save failed: ' + lErr.message);
-    for (const l of lines) {
-      const newVal = (parseFloat(l.item.orders_in)||0) + l.units;
-      const { error: uErr } = await sb.from('items').update({ orders_in: newVal }).eq('id', l.item.id);
-      if (uErr) console.warn('inv update warn:', uErr.message);
-    }
-    await fetchItems();
-    renderOrderForm(); updateOrderTotal();
-    pendingOrder=null;
-    $('modal-email').classList.remove('open');
-    toast('✅ Order saved — inventory updated!');
-  } catch(e) { toast(e.message, true); }
-  finally { btn.textContent='✅ Confirm & Update Inventory'; btn.disabled=false; }
-});
-
 // ── CONSUMPTION ──────────────────────────────────────────────
+const CON_CATS = [('🍾 Champagne & Sparkling', ['Champagne', 'Sparkling']), ('🥂 White Wine', ['White']), ('🌹 Rosé', ['Rose']), ('🍷 Red Wine', ['Red']), ('🍸 Non-Alc', ['Non-Alc Wine', 'Non-Alc Cocktail', 'Dessert Wine']), ('🍺 Beer', ['Beer']), ('🥤 Soft Drinks', ['Soft Drink', 'Water']), ('🧃 Juices', ['Juice']), ('🥃 Spirits & Mixers', ['Spirit', 'Mixer'])];
+let activeConCat = null;
+
 function loadConsumptionForm() {
   $('evt-date').value = today();
   $('evt-by').value = $('current-user').value || '';
-  renderConsumptionForm();
+  showConStep1();
 }
 
-function renderConsumptionForm() {
-  $('con-body').innerHTML = items.map(i => {
-    const s = soh(i);
-    const compLabel = i.is_complimentary
-      ? '<span class="badge badge-comp">Yes — Complimentary</span>'
-      : '<span style="color:var(--muted);font-size:11px">No</span>';
-    const rowStyle = i.is_complimentary ? 'color:var(--blue)' : '';
-    return `<tr style="${rowStyle}">
-      <td style="font-weight:500">${i.name}</td>
-      <td><span class="badge badge-cat">${i.category}</span></td>
-      <td style="font-size:11px;color:var(--muted)">${i.price_tier}</td>
-      <td class="td-center" style="font-weight:600">${fmtNum(s)}</td>
-      <td class="td-center">${compLabel}</td>
-      <td class="qty-cell td-center">
-        <input type="number" id="qty-con-${i.id}" min="0" step="0.5" placeholder="0"
-          style="${i.is_complimentary?'border-color:var(--blue)':''}">
-      </td>
-    </tr>`;
+function showConStep1() {
+  $('con-step1').style.display = 'block';
+  $('con-step2').style.display = 'none';
+  renderCatShortcuts();
+}
+
+function backToEventDetails() {
+  $('con-step1').style.display = 'block';
+  $('con-step2').style.display = 'none';
+}
+
+function renderCatShortcuts() {
+  $('con-cat-shortcuts').innerHTML = CON_CATS.map(([label, cats]) =>
+    `<button onclick="jumpToCat('${label.replace(/'/g,"\\'")}')"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:20px;
+             padding:6px 14px;color:var(--text);font-size:12px;cursor:pointer;
+             font-family:inherit;transition:all 0.15s"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--white)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'"
+    >${label}</button>`
+  ).join('');
+}
+
+function validateEventDetails() {
+  const name = $('evt-name').value.trim();
+  const date = $('evt-date').value;
+  const by   = $('evt-by').value.trim();
+  if (!name || !date || !by) {
+    toast('Please fill in Event Name, Date and Recorded By first', true);
+    return false;
+  }
+  return true;
+}
+
+function jumpToCat(catLabel) {
+  if (!validateEventDetails()) return;
+  goToStep2(catLabel);
+}
+
+$('con-next-btn').addEventListener('click', () => {
+  if (!validateEventDetails()) return;
+  goToStep2(CON_CATS[0][0]);
+});
+
+function goToStep2(initialCat) {
+  $('con-step1').style.display = 'none';
+  $('con-step2').style.display = 'block';
+
+  // Update badge
+  $('con-badge-title').textContent = $('evt-name').value;
+  $('con-badge-meta').textContent = $('evt-date').value + ' · ' + $('evt-type').value + ' · ' + $('evt-by').value;
+
+  renderConCatTabs(initialCat);
+  renderConGroup(initialCat);
+}
+
+function renderConCatTabs(active) {
+  activeConCat = active;
+  $('con-cat-tabs').innerHTML = CON_CATS.map(([label, cats]) => {
+    const isActive = label === active;
+    // Count entries for this cat
+    const catItems = items.filter(i => cats.includes(i.category));
+    const entered = catItems.filter(i => {
+      const el = document.getElementById('qty-con-' + i.id);
+      return el && parseFloat(el.value) > 0;
+    }).length;
+    return `<button onclick="switchConCat('${label.replace(/'/g,"\\'")}')"
+      style="padding:7px 14px;border-radius:20px;border:1.5px solid ${isActive?'var(--accent)':'var(--border)'};
+             background:${isActive?'var(--accent)':'var(--surface)'};color:${isActive?'#fff':'var(--muted)'};
+             font-size:12px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:inherit;
+             transition:all 0.15s;position:relative">
+      ${label}${entered>0?` <span style="background:var(--green);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">${entered}</span>`:''}
+    </button>`;
+  }).join('');
+}
+
+function switchConCat(label) {
+  renderConCatTabs(label);
+  renderConGroup(label);
+}
+
+function renderConGroup(catLabel) {
+  const catDef = CON_CATS.find(([l]) => l === catLabel);
+  if (!catDef) return;
+  const [label, cats] = catDef;
+  const catItems = items.filter(i => cats.includes(i.category));
+
+  // Sub-group within category
+  const subGroups = {};
+  catItems.forEach(i => {
+    let sub = i.category;
+    if (sub === 'Soft Drink') sub = i.name.toLowerCase().includes('1.25') ? 'Soft Drink 1.25L' : 'Soft Drink 330ml';
+    if (!subGroups[sub]) subGroups[sub] = [];
+    subGroups[sub].push(i);
+  });
+
+  const html = Object.entries(subGroups).map(([sub, subItems]) => {
+    const rows = subItems.map(i => {
+      const s = soh(i);
+      const sColor = s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)';
+      const isComp = i.is_complimentary;
+      const vt = i.vintage ? ' <span style="color:var(--muted);font-size:11px">'+i.vintage+'</span>' : '';
+      const existingVal = (() => { const el = document.getElementById('qty-con-'+i.id); return el ? el.value : ''; })();
+      return `<tr style="border-bottom:1px solid var(--border);${isComp?'background:rgba(41,128,185,0.04)':''}">
+        <td style="padding:10px 14px;max-width:280px">
+          <div style="font-weight:500">${i.name}${vt}</div>
+          ${isComp?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':''}
+        </td>
+        <td style="padding:10px 14px;text-align:center;font-weight:700;color:${sColor}">${Math.max(0,Math.round(s))}</td>
+        <td style="padding:10px 14px;text-align:center;background:rgba(233,69,96,0.03)">
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+            <button onclick="adjustCon(${i.id},-1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;color:var(--text);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button>
+            <input type="number" id="qty-con-${i.id}" min="0" step="1" placeholder="0" value="${existingVal}"
+              style="width:54px;background:var(--surface);border:1.5px solid ${isComp?'rgba(41,128,185,0.5)':'var(--border)'};
+                     color:var(--white);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;
+                     text-align:center;font-family:inherit"
+              oninput="onConInput(${i.id})" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='${isComp?'rgba(41,128,185,0.5)':'var(--border)'}'">
+            <button onclick="adjustCon(${i.id},1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;color:var(--text);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const subLabel = Object.keys(subGroups).length > 1 ? sub : null;
+    return `<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+      ${subLabel?`<div style="background:var(--surface2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px">${subLabel}</div>`:''}
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:rgba(255,255,255,0.02)">
+          <th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Item</th>
+          <th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">SOH</th>
+          <th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;background:rgba(233,69,96,0.04)">Units Consumed</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  $('con-active-group').innerHTML = html || '<div class="empty">No items in this category.</div>';
+  updateConSummary();
+}
+
+function adjustCon(id, delta) {
+  const el = document.getElementById('qty-con-' + id);
+  if (!el) return;
+  const current = parseFloat(el.value)||0;
+  el.value = Math.max(0, current + delta);
+  onConInput(id);
+}
+
+function onConInput(id) {
+  updateConSummary();
+  // Refresh tab badges without re-rendering the group
+  renderConCatTabs(activeConCat);
+}
+
+function updateConSummary() {
+  const entered = items.filter(i => {
+    const el = document.getElementById('qty-con-' + i.id);
+    return el && parseFloat(el.value) > 0;
+  });
+  const summaryEl = $('con-summary');
+  const listEl = $('con-summary-list');
+  if (!entered.length) { summaryEl.style.display='none'; return; }
+  summaryEl.style.display = 'block';
+  listEl.innerHTML = entered.map(i => {
+    const el = document.getElementById('qty-con-' + i.id);
+    const qty = parseFloat(el.value)||0;
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px">
+      <span style="font-weight:600;color:var(--accent)">${qty}×</span>
+      <span>${i.name.length>30?i.name.substring(0,28)+'…':i.name}</span>
+    </div>`;
   }).join('');
 }
 
@@ -1204,36 +1447,41 @@ $('submit-consumption-btn').addEventListener('click', async () => {
   const date = $('evt-date').value;
   const by   = $('evt-by').value.trim();
   const type = $('evt-type').value;
-
-  if (!name || !date || !by) { toast('Please fill in Event Name, Date and Recorded By', true); return; }
+  if (!name||!date||!by) { toast('Event details missing', true); return; }
 
   const lines = [];
   items.forEach(i => {
-    const qtyEl = $(`qty-con-${i.id}`);
-    if (!qtyEl) return;
-    const qty = parseFloat(qtyEl.value)||0;
+    const el = document.getElementById('qty-con-' + i.id);
+    if (!el) return;
+    const qty = parseFloat(el.value)||0;
     if (qty > 0) lines.push({ item: i, qty });
   });
-
   if (!lines.length) { toast('No quantities entered', true); return; }
 
-  const { data: event, error: eErr } = await sb.from('events')
-    .insert({ event_name: name, event_date: date, event_type: type, recorded_by: by })
-    .select().single();
-  if (eErr) { toast('Error: ' + eErr.message, true); return; }
+  const btn = $('submit-consumption-btn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    const { data: event, error: eErr } = await sb.from('events')
+      .insert({ event_name:name, event_date:date, event_type:type, recorded_by:by })
+      .select().single();
+    if (eErr) throw new Error(eErr.message);
 
-  await sb.from('event_lines').insert(lines.map(l => ({
-    event_id: event.id, item_id: l.item.id, quantity: l.qty
-  })));
+    const { error: lErr } = await sb.from('event_lines').insert(
+      lines.map(l => ({ event_id:event.id, item_id:l.item.id, quantity:l.qty }))
+    );
+    if (lErr) throw new Error(lErr.message);
 
-  for (const l of lines) {
-    await sb.from('items').update({ consumed: (l.item.consumed||0) + l.qty }).eq('id', l.item.id);
-  }
+    for (const l of lines) {
+      await sb.from('items').update({ consumed:(parseFloat(l.item.consumed)||0)+l.qty }).eq('id',l.item.id);
+    }
 
-  await fetchItems();
-  renderConsumptionForm();
-  $('evt-name').value = '';
-  toast(`✅ Consumption logged — ${lines.length} item(s) updated`);
+    await fetchItems();
+    // Reset form
+    $('evt-name').value='';
+    loadConsumptionForm();
+    toast('✅ Consumption logged — '+lines.length+' item(s) updated');
+  } catch(e) { toast('Error: '+e.message, true); }
+  finally { btn.textContent='✅ Submit'; btn.disabled=false; }
 });
 
 // ── HISTORY ──────────────────────────────────────────────────
@@ -1436,14 +1684,67 @@ function filterOrderRows() {
   });
 }
 
-// ── CONSUMPTION SEARCH ────────────────────────────────────────
-function filterConRows() {
-  var q = (document.getElementById('con-search')||{value:''}).value.toLowerCase().trim();
-  document.querySelectorAll('#con-body tr').forEach(function(row) {
-    var name = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
-    row.style.display = (!q || name.includes(q)) ? '' : 'none';
-  });
-}
+
+
+// ── EMAIL MODAL LISTENERS ────────────────────────────────────
+$('copy-email-btn').addEventListener('click', async () => {
+  const text = $('email-preview-text').textContent;
+  const plain = text.replace(/\n/g, '\r\n');
+  const html = '<div style="font-family:Calibri,Arial,sans-serif;font-size:14px;line-height:1.7">' +
+    text.split('\n').map(line =>
+      line.trim() === ''
+        ? '<br>'
+        : '<p style="margin:0">' + line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'
+    ).join('') + '</div>';
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/plain': new Blob([plain], { type:'text/plain' }),
+      'text/html':  new Blob([html],  { type:'text/html'  }),
+    })]);
+    toast('📋 Copied! Paste directly into Outlook body.');
+  } catch(e) {
+    try { await navigator.clipboard.writeText(plain); toast('📋 Copied!'); }
+    catch(e2) {
+      const ta = document.createElement('textarea');
+      ta.value = plain; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); toast('📋 Copied!');
+    }
+  }
+});
+
+$('confirm-order-btn').addEventListener('click', async () => {
+  if (!pendingOrder) return;
+  const { date, by, notes, lines } = pendingOrder;
+  const btn = $('confirm-order-btn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const { data: order, error: oErr } = await sb.from('orders')
+      .insert({ order_date:date, ordered_by:by, notes, status:'submitted' })
+      .select().single();
+    if (oErr) throw new Error('Order save failed: ' + oErr.message);
+
+    const { error: lErr } = await sb.from('order_lines').insert(
+      lines.map(l => ({ order_id:order.id, item_id:l.item.id, quantity:l.units, unit_cost:l.item.luc }))
+    );
+    if (lErr) throw new Error('Lines save failed: ' + lErr.message);
+
+    for (const l of lines) {
+      const newVal = (parseFloat(l.item.orders_in)||0) + l.units;
+      await sb.from('items').update({ orders_in: newVal }).eq('id', l.item.id);
+    }
+
+    await fetchItems();
+    loadOrderForm();
+    pendingOrder = null;
+    $('modal-email').classList.remove('open');
+    toast('✅ Order saved — inventory updated!');
+  } catch(e) {
+    toast(e.message, true);
+  } finally {
+    btn.textContent = '✅ Confirm & Update Inventory';
+    btn.disabled = false;
+  }
+});
 
 // ── START ────────────────────────────────────────────────────
 init();
