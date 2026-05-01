@@ -166,7 +166,7 @@
   .section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 12px; }
 
   /* HAMBURGER & MOBILE */
-  #hamburger { display: none; position: fixed; top: 10px; left: 10px; z-index: 300; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 40px; height: 40px; font-size: 20px; cursor: pointer; color: var(--text); align-items: center; justify-content: center; }
+  #hamburger { display: none; position: fixed; top: 8px; left: 8px; z-index: 400; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; width: 42px; height: 42px; font-size: 20px; cursor: pointer; color: var(--white); align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 199; }
   @media (max-width: 800px) {
     #hamburger { display: flex; }
@@ -193,8 +193,8 @@
 <body>
 
 <!-- SIDEBAR -->
-<button id="hamburger" onclick="toggleSidebar()">☰</button>
-<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<button id="hamburger">☰</button>
+<div id="sidebar-overlay"></div>
 <aside id="sidebar">
   <div class="logo">
     <h1>🍷 Beverage Portal</h1>
@@ -298,6 +298,11 @@
       </div>
     </div>
 
+    <div style="margin-bottom:16px">
+      <input id="ord-search" type="text" placeholder="🔍  Search items to order…"
+        oninput="filterOrderRows()"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:10px 14px;font-size:13px;outline:none">
+    </div>
     <div id="order-sections" style="margin-top:0"></div>
 
     <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">
@@ -329,6 +334,11 @@
       </div>
     </div>
 
+    <div style="margin-bottom:16px">
+      <input id="con-search" type="text" placeholder="🔍  Search items…"
+        oninput="filterConRows()"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:10px 14px;font-size:13px;outline:none">
+    </div>
     <div class="card">
       <div class="card-header">
         <h3>Log Consumption</h3>
@@ -1393,6 +1403,47 @@ $('reset-month-btn').addEventListener('click', async () => {
   await fetchItems();
   toast('Monthly reset complete — opening stocks updated');
 });
+
+// ── HAMBURGER (iOS-safe) ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var btn     = document.getElementById('hamburger');
+  var overlay = document.getElementById('sidebar-overlay');
+  var sidebar = document.getElementById('sidebar');
+  if (!btn) return;
+  function openNav()  { sidebar.classList.add('open'); overlay.classList.add('open'); }
+  function closeNav() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  function toggle(e)  { e.preventDefault(); e.stopPropagation(); sidebar.classList.contains('open') ? closeNav() : openNav(); }
+  btn.addEventListener('click', toggle);
+  btn.addEventListener('touchend', toggle);
+  overlay.addEventListener('click', closeNav);
+  overlay.addEventListener('touchend', function(e){ e.preventDefault(); closeNav(); });
+  document.querySelectorAll('.nav-link').forEach(function(l){
+    l.addEventListener('click', function(){ if (window.innerWidth <= 800) closeNav(); });
+    l.addEventListener('touchend', function(){ if (window.innerWidth <= 800) closeNav(); });
+  });
+});
+
+// ── ORDER SEARCH ─────────────────────────────────────────────
+function filterOrderRows() {
+  var q = (document.getElementById('ord-search')||{value:''}).value.toLowerCase().trim();
+  document.querySelectorAll('#order-sections tbody tr').forEach(function(row) {
+    var name = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+    row.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+  document.querySelectorAll('#order-sections > div').forEach(function(sec) {
+    var vis = Array.from(sec.querySelectorAll('tbody tr')).filter(function(r){ return r.style.display !== 'none'; }).length;
+    sec.style.display = (q && vis === 0) ? 'none' : '';
+  });
+}
+
+// ── CONSUMPTION SEARCH ────────────────────────────────────────
+function filterConRows() {
+  var q = (document.getElementById('con-search')||{value:''}).value.toLowerCase().trim();
+  document.querySelectorAll('#con-body tr').forEach(function(row) {
+    var name = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+    row.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+}
 
 // ── START ────────────────────────────────────────────────────
 init();
