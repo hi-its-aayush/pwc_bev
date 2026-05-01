@@ -142,7 +142,6 @@ tbody td{padding:10px 14px;color:var(--txt)}
 <aside id="sb" style="display:none">
   <div class="logo">
     <div><h2>🍷 Beverage Portal</h2><small>PwC Sydney</small></div>
-    <button id="outbtn" title="Sign out">↩</button>
   </div>
   <nav id="nav">
     <a href="#" data-p="dashboard" class="active">📊 Dashboard</a>
@@ -153,7 +152,10 @@ tbody td{padding:10px 14px;color:var(--txt)}
     <a href="#" data-p="reports">📅 Reports</a>
     <a href="#" data-p="settings">⚙️ Settings</a>
   </nav>
-  <div class="ubar"><select id="usel"><option value="">Select your name</option></select></div>
+  <div class="ubar">
+    <select id="usel" style="margin-bottom:10px"><option value="">Select your name</option></select>
+    <button id="outbtn" style="width:100%;background:rgba(233,69,96,0.1);border:1px solid rgba(233,69,96,0.3);color:#e94560;border-radius:7px;padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:8px">↩ Sign Out</button>
+  </div>
 </aside>
 
 <main id="mn" style="display:none">
@@ -199,22 +201,25 @@ tbody td{padding:10px 14px;color:var(--txt)}
           <div id="osupn" style="font-weight:700;font-size:14px;color:var(--wht)"></div>
           <div id="osupm" style="font-size:12px;color:var(--mut);margin-top:2px"></div>
         </div>
-        <span id="ototl" style="font-size:13px;color:var(--mut)">Total: $0.00</span>
+        
         <button class="btn bs" id="subord">📋 Preview Email</button>
       </div>
       <div class="card" style="margin-bottom:16px"><div class="cb" style="padding:14px 18px">
-        <div class="fr3">
+        <div class="fr">
           <div class="fg" style="margin:0"><label>Order Date</label><input type="date" id="odate"></div>
           <div class="fg" style="margin:0"><label>Ordered By</label><input type="text" id="oby" placeholder="Your name"></div>
-          <div class="fg" style="margin:0"><label>Delivery Note</label><input type="text" id="onotes" placeholder="e.g. Deliver next Tuesday"></div>
         </div>
       </div></div>
       <div style="background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.25);border-radius:8px;padding:10px 16px;font-size:12px;color:#f39c12;margin-bottom:16px">
         📦 Enter <strong>cartons</strong>. Wine=12 bottles · Beer=24 cans · Soft drink 330ml=24 · 1.25L=12 · Water 300ml=24
       </div>
+      <div style="margin-bottom:12px">
+        <input id="osrch" type="text" placeholder="🔍 Search items…" oninput="filterOItems()"
+          style="width:100%;background:var(--sur);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
+      </div>
       <div id="ogrps"></div>
       <div style="position:sticky;bottom:0;background:var(--sur);border-top:1px solid var(--bdr);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;border-radius:0 0 10px 10px">
-        <span id="ototb" style="font-size:13px;color:var(--mut)">Total: $0.00</span>
+        
         <button class="btn bs" onclick="document.getElementById('subord').click()">📋 Preview &amp; Submit</button>
       </div>
     </div>
@@ -227,7 +232,7 @@ tbody td{padding:10px 14px;color:var(--txt)}
         <div class="fr"><div class="fg"><label>Function Name</label><input type="text" id="ename" placeholder="e.g. Client Dinner"></div><div class="fg"><label>Booking ID</label><input type="text" id="ebid" placeholder="BK-001"></div></div>
         <div class="fr3"><div class="fg"><label>Date</label><input type="date" id="edate"></div><div class="fg"><label>Time</label><input type="time" id="etime"></div><div class="fg"><label>Room</label><input type="text" id="eroom" placeholder="Level 34 Boardroom"></div></div>
         <div class="fr3"><div class="fg"><label>Pax</label><input type="number" id="epax" placeholder="24" min="1"></div><div class="fg"><label>Package Type</label><select id="etype"><option>Luxe</option><option>Client</option><option>Staff</option></select></div><div class="fg"><label>Supervisor</label><input type="text" id="esup" placeholder="Supervisor name"></div></div>
-        <div class="fr"><div class="fg"><label>Recorded By</label><input type="text" id="eby" placeholder="Your name"></div></div>
+
         <div style="background:rgba(41,128,185,.08);border:1px solid rgba(41,128,185,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#5dade2">💧 Soft drinks, waters, and juices are <strong>complimentary</strong> for all clients.</div>
         <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn bp" id="cnext">Continue →</button></div>
       </div></div>
@@ -242,7 +247,11 @@ tbody td{padding:10px 14px;color:var(--txt)}
         </div>
         <button class="btn bp" id="subcon">✅ Submit</button>
       </div>
-      <div id="ctabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div id="ctabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div style="margin-bottom:12px">
+        <input id="csrch" type="text" placeholder="🔍 Search items in this category…" oninput="filterCItems()"
+          style="width:100%;background:var(--sur);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
+      </div>
       <div id="cgrp"></div>
       <div id="csum" style="margin-top:12px;display:none"><div style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Items Entered</div><div id="csumlist" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
       <div style="position:sticky;bottom:0;background:var(--sur);border-top:1px solid var(--bdr);padding:12px 18px;display:flex;justify-content:flex-end;margin-top:16px">
@@ -582,7 +591,7 @@ function renderOItems(){
       var s=soh(i),cs=ctn(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
       return'<tr style="border-bottom:1px solid var(--bdr)"><td style="padding:10px 14px;font-weight:500">'+i.name+vt+'</td><td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 14px;font-size:11px;color:var(--mut);text-align:center">'+cs.l+'</td><td style="padding:10px 14px;text-align:center;background:rgba(243,156,18,.04)"><input type="number" id="qo'+i.id+'" min="0" step="1" placeholder="0" style="width:64px;background:var(--sur);border:1.5px solid var(--bdr);color:var(--wht);border-radius:6px;padding:6px 8px;font-size:14px;font-weight:700;text-align:center" oninput="updateOTotal()" onchange="updateOTotal()" onfocus="this.style.borderColor=\'#f39c12\'" onblur="this.style.borderColor=\'var(--bdr)\'"></td><td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--mut)" id="ql'+i.id+'">—</td></tr>';
     }).join('');
-    return'<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)"><div style="background:var(--sur2);padding:9px 16px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between"><span>'+g+'</span><span style="font-weight:400">'+gi.length+' item'+(gi.length!==1?'s':'')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Carton</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty</th><th style="padding:7px 14px;text-align:right;font-size:10px;color:var(--mut)">Est. Cost</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    return'<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)"><div style="background:var(--sur2);padding:9px 16px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between"><span>'+g+'</span><span style="font-weight:400">'+gi.length+' item'+(gi.length!==1?'s':'')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Carton</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
 }
 
@@ -591,11 +600,10 @@ function updateOTotal(){
   items.forEach(function(i){
     var el=document.getElementById('qo'+i.id); if(!el)return;
     var c=parseFloat(el.value)||0,line=c*ctn(i).q*i.luc; tot+=line;
-    var le=document.getElementById('ql'+i.id); if(le) le.textContent=c>0?fmt(line):'—';
+    
     if(c>0) el.style.borderColor='#f39c12';
   });
-  var lb='Est. total: '+fmt(tot);
-  G('ototl').textContent=lb; G('ototb').textContent=lb;
+  G('ototl').textContent=''; G('ototb').textContent='';
 }
 
 G('subord').addEventListener('click', function(){
@@ -615,7 +623,7 @@ function showEmailPreview(){
   var grouped={};
   pending.lines.forEach(function(l){var c=l.item.category;if(!grouped[c])grouped[c]=[];grouped[c].push(l);});
   var body='Hi '+sup.ct+',\n\nCan we please have the following delivered to us next week:\n';
-  if(pending.notes) body+='\nNote: '+pending.notes+'\n';
+
   body+='\n';
   Object.keys(grouped).forEach(function(cat){
     body+=cat+':\n';
@@ -644,7 +652,7 @@ async function confirmOrder(){
   var btn=G('mefooter').querySelector('.bs');
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
   try{
-    var r1=await sb.from('orders').insert({order_date:pending.date,ordered_by:pending.by,notes:pending.notes,status:'submitted'}).select().single();
+    var r1=await sb.from('orders').insert({order_date:pending.date,ordered_by:pending.by,status:'submitted'}).select().single();
     if(r1.error) throw new Error(r1.error.message);
     var r2=await sb.from('order_lines').insert(pending.lines.map(function(l){return{order_id:r1.data.id,item_id:l.item.id,quantity:l.units,unit_cost:l.item.luc};}));
     if(r2.error) throw new Error(r2.error.message);
@@ -664,7 +672,7 @@ var CCATS=[
   ['🍺 Beer',['Beer']],['🥤 Soft Drinks',['Soft Drink','Water']],['🧃 Juices',['Juice']],['🥃 Spirits & Mixers',['Spirit','Mixer']]
 ];
 
-function loadCon(){ G('edate').value=td(); G('eby').value=G('usel').value||''; showCS1(); }
+function loadCon(){ G('edate').value=td(); showCS1(); }
 function showCS1(){ G('cs1').style.display='block'; G('cs2').style.display='none'; renderShorts(); }
 
 function renderShorts(){
@@ -672,7 +680,7 @@ function renderShorts(){
 }
 
 function valEvt(){
-  if(!G('ename').value.trim()||!G('edate').value||!G('eby').value.trim()){toast('Please fill in Function Name, Date and Recorded By',true);return false;}return true;
+  if(!G('ename').value.trim()||!G('edate').value){toast('Please fill in Function Name and Date',true);return false;}return true;
 }
 
 G('cnext').addEventListener('click',function(){if(!valEvt())return;goCS2(CCATS[0][0]);});
@@ -681,7 +689,7 @@ function jumpCat(idx){if(!valEvt())return;goCS2(CCATS[idx][0]);}
 function goCS2(initCat){
   G('cs1').style.display='none'; G('cs2').style.display='block';
   G('cbadget').textContent=G('ename').value;
-  var pts=[G('edate').value,G('etime').value,G('eroom').value,G('epax').value?G('epax').value+' pax':'',G('etype').value,G('eby').value];
+  var pts=[G('edate').value,G('etime').value,G('eroom').value,G('epax').value?G('epax').value+' pax':'',G('etype').value,G('esup').value];
   G('cbadgem').textContent=pts.filter(Boolean).join(' · ');
   renderCTabs(initCat); renderCGrp(initCat);
 }
@@ -695,7 +703,7 @@ function renderCTabs(active){
   }).join('');
 }
 
-function swCat(idx){var c=CCATS[idx];if(c){renderCTabs(c[0]);renderCGrp(c[0]);}}
+function swCat(idx){var c=CCATS[idx];if(c){renderCTabs(c[0]);renderCGrp(c[0]);var s=G('csrch');if(s)s.value='';;}}
 
 function renderCGrp(catLabel){
   var cd=CCATS.find(function(c){return c[0]===catLabel;});if(!cd)return;
@@ -734,7 +742,7 @@ G('subcon').addEventListener('click', async function(){
   if(!lines.length){toast('No quantities entered',true);return;}
   var btn=G('subcon'); btn.disabled=true; btn.textContent='Saving…';
   try{
-    var bid=G('ebid').value.trim(),room=G('eroom').value.trim(),pax=parseInt(G('epax').value)||null,sup=G('esup').value.trim(),etime=G('etime').value;
+    var bid=G('ebid').value.trim(),room=G('eroom').value.trim(),pax=parseInt(G('epax').value)||null,sup=G('esup').value.trim(),etime=G('etime').value,by=sup||'Team';
     var r1=await sb.from('events').insert({event_name:name,event_date:date,event_time:etime,event_type:type,recorded_by:by,booking_id:bid,room:room,pax:pax,supervisor:sup}).select().single();
     if(r1.error) throw new Error(r1.error.message);
     var r2=await sb.from('event_lines').insert(lines.map(function(l){return{event_id:r1.data.id,item_id:l.item.id,quantity:l.qty};}));
@@ -826,6 +834,27 @@ async function genReport(isAuto){
   var r=await sb.from('monthly_reports').upsert({report_month:mk,report_label:lbl,is_auto:isAuto,generated_by:isAuto?'Auto':(G('usel').value||'Manual'),snapshot:snap},{onConflict:'report_month'});
   if(r.error){toast('Error: '+r.error.message,true);return;}
   toast('✅ Report saved: '+lbl); loadReports();
+}
+
+
+function filterOItems(){
+  var q=(G('osrch')||{value:''}).value.toLowerCase().trim();
+  document.querySelectorAll('#ogrps tbody tr').forEach(function(row){
+    var name=row.cells[0]?row.cells[0].textContent.toLowerCase():'';
+    row.style.display=(!q||name.includes(q))?'':'none';
+  });
+  document.querySelectorAll('#ogrps > div').forEach(function(sec){
+    var vis=Array.from(sec.querySelectorAll('tbody tr')).filter(function(r){return r.style.display!=='none';}).length;
+    sec.style.display=(q&&vis===0)?'none':'';
+  });
+}
+
+function filterCItems(){
+  var q=(G('csrch')||{value:''}).value.toLowerCase().trim();
+  document.querySelectorAll('#cgrp tbody tr').forEach(function(row){
+    var name=row.cells[0]?row.cells[0].textContent.toLowerCase():'';
+    row.style.display=(!q||name.includes(q))?'':'none';
+  });
 }
 
 async function autoReport(){
