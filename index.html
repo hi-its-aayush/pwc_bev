@@ -249,41 +249,19 @@
 
   <!-- INVENTORY -->
   <section class="page" id="page-inventory">
-    <div class="filter-bar">
-      <input id="inv-search" type="text" placeholder="🔍  Search items…">
-      <select id="inv-filter-cat">
-        <option value="">All Categories</option>
-      </select>
-      <select id="inv-filter-tier">
-        <option value="">All Tiers</option>
-        <option>Luxe $65+</option>
-        <option>Client $30-65</option>
-        <option>Staff &lt;$30</option>
-        <option>Non-Alc</option>
-        <option>Beer/Spirits</option>
-        <option>Complimentary</option>
-      </select>
-      <select id="inv-filter-status">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <input id="inv-search" type="text" placeholder="🔍  Search items…"
+        style="flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-size:13px;outline:none"
+        oninput="renderInventory()">
+      <select id="inv-filter-status" onchange="renderInventory()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
         <option value="">All Status</option>
         <option value="ok">In Stock</option>
         <option value="low">Low Stock</option>
         <option value="out">Out of Stock</option>
       </select>
+      <button class="btn btn-outline btn-sm" onclick="fetchItems().then(renderInventory)">🔄 Refresh</button>
     </div>
-    <div class="card">
-      <div class="table-wrap">
-        <table id="inv-table">
-          <thead><tr>
-            <th>Item</th><th>Category</th><th>Tier</th><th>Supplier</th>
-            <th class="td-num">LUC (ex GST)</th><th class="td-num">Opening</th>
-            <th class="td-num">Ordered In</th><th class="td-num">Consumed</th>
-            <th class="td-num">Current SOH</th><th class="td-num">SOH Value</th>
-            <th>Status</th><th></th>
-          </tr></thead>
-          <tbody id="inv-body"><tr><td colspan="12"><div class="loading"><div class="spinner"></div> Loading…</div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
+    <div id="inv-body"><div class="loading"><div class="spinner"></div> Loading…</div></div>
   </section>
 
   <!-- ORDERS -->
@@ -296,35 +274,18 @@
           <div class="form-group"><label>Ordered By</label><input type="text" id="ord-by" placeholder="Your name"></div>
           <div class="form-group"><label>Notes</label><input type="text" id="ord-notes" placeholder="Optional notes"></div>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label>Filter by Supplier</label>
-            <select id="ord-filter-sup"><option value="">All Suppliers</option></select>
-          </div>
-          <div class="form-group"><label>Filter by Category</label>
-            <select id="ord-filter-cat"><option value="">All Categories</option></select>
-          </div>
+        <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.3);border-radius:7px;padding:10px 14px;font-size:12px;color:#f39c12;margin-top:4px">
+          📦 <strong>Order in cartons.</strong> Inventory is updated in individual units automatically.
+          Wine/Sparkling = 12 bottles/carton · Beer = 24 cans/carton · Soft drink 330ml = 24/carton · 1.25L = 12/carton · Water 300ml = 24/carton
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3>Select Items & Quantities</h3>
-        <div style="display:flex;gap:8px;align-items:center">
-          <span id="ord-total-label" style="font-size:13px;color:var(--muted)">Order total: $0.00</span>
-          <button class="btn btn-success" id="submit-order-btn">📧 Submit & Draft Email</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table class="order-table">
-          <thead><tr>
-            <th>Item</th><th>Category</th><th>Supplier</th>
-            <th>Current SOH</th><th>Unit Cost</th>
-            <th class="qty-cell">QTY to Order</th><th>Line Total</th>
-          </tr></thead>
-          <tbody id="ord-body"><tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
-      </div>
+    <div id="order-sections" style="margin-top:0"></div>
+
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px">
+      <span id="ord-total-label" style="font-size:13px;color:var(--muted)">Est. order total: $0.00</span>
+      <button class="btn btn-success" id="submit-order-btn">📋 Preview Emails & Submit</button>
     </div>
   </section>
 
@@ -432,6 +393,26 @@
 
 </main>
 
+<!-- EMAIL PREVIEW MODAL -->
+<div class="modal-overlay" id="modal-email">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <h3>📧 Order Emails — Review & Copy</h3>
+      <button class="modal-close" data-close="modal-email">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Select each supplier tab, copy the email, and paste into Outlook. Then click <strong>Confirm & Update Inventory</strong>.</p>
+      <div style="display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:14px" id="email-tabs"></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:'Segoe UI',sans-serif;font-size:13px;line-height:1.9;white-space:pre-wrap;color:var(--text);max-height:360px;overflow-y:auto" id="email-preview-text"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="copy-email-btn">📋 Copy Email Text</button>
+      <button class="btn btn-outline" data-close="modal-email">Cancel</button>
+      <button class="btn btn-success" id="confirm-order-btn">✅ Confirm & Update Inventory</button>
+    </div>
+  </div>
+</div>
+
 <!-- ITEM EDIT MODAL -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal">
@@ -485,8 +466,8 @@
 // ═══════════════════════════════════════════════════════════
 // CONFIG — Replace with your Supabase credentials
 // ═══════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://eznyiwromgvasgrragjm.supabase.co';
-const SUPABASE_KEY  = 'sb_publishable_s8hEE_D8jPqCS62f08uYTw_2kBY5-r0';
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
 // ═══════════════════════════════════════════════════════════
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -611,9 +592,43 @@ const SEED_ITEMS = [
   ["Cruz Madere 2L","Spirit","Beer/Spirits","","",0,false],
 ];
 
+// ── SUPPLIERS ───────────────────────────────────────────────
+const SUPPLIERS = {
+  'Sydney Wines':  { contact: 'Antony',       email: 'antony@sydneywine.com.au' },
+  'Noah Juices':   { contact: 'Mark',         email: 'orders@baco.com.au' },
+  "Young Henry's": { contact: 'Ben Stockton', email: 'stocko@younghenrys.com' },
+};
+
+function getSupplierName(name) {
+  const n = (name||'').toLowerCase();
+  if (n.includes('noah')) return 'Noah Juices';
+  if (n.includes('young henry')) return "Young Henry's";
+  return 'Sydney Wines';
+}
+
+function cartonSize(item) {
+  const name = (item.name||'').toLowerCase();
+  const cat  = item.category;
+  if (cat === 'Beer') return { qty: 24, label: '24 cans/carton' };
+  if (cat === 'Soft Drink') {
+    if (name.includes('1.25')) return { qty: 12, label: '12 × 1.25L/carton' };
+    return { qty: 24, label: '24 × 330ml/carton' };
+  }
+  if (cat === 'Water') {
+    if (name.includes('750ml') || name.includes('500ml')) return { qty: 12, label: '12 bottles/carton' };
+    return { qty: 24, label: '24 × 300ml/carton' };
+  }
+  if (cat === 'Juice') return { qty: 12, label: '12 bottles/carton' };
+  if (cat === 'Non-Alc Cocktail') return { qty: 24, label: '24 cans/carton' };
+  if (cat === 'Spirit' || cat === 'Mixer') return { qty: 1, label: 'per bottle' };
+  return { qty: 12, label: '12 bottles/carton' }; // wines
+}
+
 // ── APP STATE ───────────────────────────────────────────────
 let items = [];
-let settings = { members: [], supplierEmails: {} };
+let settings = { members: [] };
+let pendingOrder = null;
+let activeEmailSupplier = null;
 let chartInstance = null;
 
 // ── UTILITIES ───────────────────────────────────────────────
@@ -718,21 +733,28 @@ function showConfigPrompt() {
 }
 
 async function ensureSeeded() {
-  const { count } = await sb.from('items').select('*', { count: 'exact', head: true });
-  if (count > 0) { await fetchItems(); return; }
-  // Seed items
-  const rows = SEED_ITEMS.map(([name,category,price_tier,vintage,supplier,luc,is_complimentary]) =>
-    ({ name, category, price_tier, vintage, supplier, luc, is_complimentary, opening_soh:0, orders_in:0, consumed:0 })
-  );
-  for (let i = 0; i < rows.length; i += 50) {
-    await sb.from('items').insert(rows.slice(i, i+50));
-  }
-  await fetchItems();
+  try {
+    const { count, error } = await sb.from('items').select('*', { count: 'exact', head: true });
+    if (error) { toast('DB error: ' + error.message, true); return; }
+    if (count > 0) { await fetchItems(); return; }
+    const rows = SEED_ITEMS.map(([name,category,price_tier,vintage,supplier,luc,is_complimentary]) =>
+      ({ name, category, price_tier, vintage,
+         supplier: getSupplierName(name),
+         luc, is_complimentary, opening_soh:0, orders_in:0, consumed:0 })
+    );
+    for (let i = 0; i < rows.length; i += 50) {
+      const { error: e } = await sb.from('items').insert(rows.slice(i, i+50));
+      if (e) { toast('Seed error: ' + e.message, true); return; }
+    }
+    await fetchItems();
+    toast('✅ ' + items.length + ' items loaded!');
+  } catch(e) { toast('Init error: ' + e.message, true); }
 }
 
 async function fetchItems() {
-  const { data } = await sb.from('items').select('*').order('price_tier').order('category').order('name');
-  items = data || [];
+  const { data, error } = await sb.from('items').select('*').order('category').order('name');
+  if (error) { toast('Fetch error: ' + error.message, true); return; }
+  items = (data || []).map(i => ({ ...i, _supplier: getSupplierName(i.name) }));
 }
 
 // ── DASHBOARD ───────────────────────────────────────────────
@@ -809,63 +831,115 @@ async function loadDashboard() {
   }
 }
 
-// ── INVENTORY ───────────────────────────────────────────────
-function loadInventory() {
-  renderInventory();
-  // Populate category filter
-  const cats = [...new Set(items.map(i=>i.category))].sort();
-  const catSel = $('inv-filter-cat');
-  catSel.innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option>${c}</option>`).join('');
-}
+// ── INVENTORY ────────────────────────────────────────────────
+function loadInventory() { renderInventory(); }
+
+const INV_LAYOUT = [
+  { section:'LUXE', color:'#9a7a1f', tier:'Luxe $65+', groups:[
+    {label:'Champagne & Sparkling', cats:['Champagne','Sparkling']},
+    {label:'White Wine', cats:['White']},
+    {label:'Red Wine', cats:['Red']},
+  ]},
+  { section:'CLIENT', color:'#1a5276', tier:'Client $30-65', groups:[
+    {label:'Champagne & Sparkling', cats:['Champagne','Sparkling']},
+    {label:'White Wine', cats:['White']},
+    {label:'Rosé', cats:['Rose']},
+    {label:'Red Wine', cats:['Red']},
+  ]},
+  { section:'STAFF', color:'#1e6b40', tier:'Staff <$30', groups:[
+    {label:'Sparkling', cats:['Sparkling']},
+    {label:'White Wine', cats:['White']},
+    {label:'Rosé', cats:['Rose']},
+    {label:'Red Wine', cats:['Red']},
+    {label:'Dessert Wine', cats:['Dessert Wine']},
+  ]},
+  { section:'NON-ALCOHOLIC', color:'#6c3483', tier:'Non-Alc', groups:[
+    {label:'Non-Alc Wine', cats:['Non-Alc Wine']},
+    {label:'Non-Alc Cocktails', cats:['Non-Alc Cocktail']},
+  ]},
+  { section:'BEER', color:'#935116', tier:null, groups:[
+    {label:null, cats:['Beer']},
+  ]},
+  { section:'SOFT DRINKS', color:'#154360', tier:null, groups:[
+    {label:'1.25L Bottles', cats:['Soft Drink'], filter:i=>i.name.toLowerCase().includes('1.25')},
+    {label:'330ml Cans',    cats:['Soft Drink'], filter:i=>!i.name.toLowerCase().includes('1.25')},
+    {label:'Water',         cats:['Water']},
+  ]},
+  { section:'JUICES', color:'#1d6a35', tier:null, groups:[
+    {label:null, cats:['Juice']},
+  ]},
+  { section:'SPIRITS & MIXERS', color:'#7b241c', tier:null, groups:[
+    {label:'Spirits', cats:['Spirit']},
+    {label:'Mixers',  cats:['Mixer']},
+  ]},
+];
 
 function renderInventory() {
-  const search = $('inv-search').value.toLowerCase();
-  const cat    = $('inv-filter-cat').value;
-  const tier   = $('inv-filter-tier').value;
-  const status = $('inv-filter-status').value;
+  const el = document.getElementById('inv-body');
+  const search  = (document.getElementById('inv-search')||{value:''}).value.toLowerCase();
+  const statusF = (document.getElementById('inv-filter-status')||{value:''}).value;
 
-  let filtered = items.filter(i => {
+  function pass(i) {
     const s = soh(i);
     if (search && !i.name.toLowerCase().includes(search)) return false;
-    if (cat && i.category !== cat) return false;
-    if (tier && i.price_tier !== tier) return false;
-    if (status === 'ok'  && s <= 3) return false;
-    if (status === 'low' && !(s > 0 && s <= 3)) return false;
-    if (status === 'out' && s > 0) return false;
+    if (statusF==='ok'  && s <= 3) return false;
+    if (statusF==='low' && !(s>0&&s<=3)) return false;
+    if (statusF==='out' && s > 0) return false;
     return true;
-  });
-
-  const tbody = $('inv-body');
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="12"><div class="empty"><p>No items match your filters</p></div></td></tr>';
-    return;
   }
 
-  tbody.innerHTML = filtered.map(i => {
+  function makeRow(i) {
     const s = soh(i);
-    const val = s * i.luc;
-    const comp = i.is_complimentary ? '<span class="badge badge-comp" style="font-size:10px">Comp</span>' : '';
-    return `<tr>
-      <td class="td-name">${i.name} ${comp}</td>
-      <td><span class="badge badge-cat">${i.category}</span></td>
-      <td style="font-size:11px;color:var(--muted)">${i.price_tier}</td>
-      <td style="font-size:12px">${i.supplier||'—'}</td>
-      <td class="td-num">${i.luc > 0 ? fmt(i.luc) : '—'}</td>
-      <td class="td-num">${fmtNum(i.opening_soh)}</td>
-      <td class="td-num" style="color:var(--green)">${fmtNum(i.orders_in)}</td>
-      <td class="td-num" style="color:var(--accent)">${fmtNum(i.consumed)}</td>
-      <td class="td-num" style="font-weight:700;color:var(--white)">${fmtNum(s)}</td>
-      <td class="td-num">${i.luc > 0 ? fmt(val) : '—'}</td>
-      <td class="td-center">${statusBadge(i)}</td>
-      <td><button class="btn btn-outline btn-sm" onclick="openEditModal(${i.id})">Edit</button></td>
-    </tr>`;
-  }).join('');
+    const sc = s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)';
+    const vt = i.vintage ? '<span style="font-size:11px;color:var(--muted);margin-left:6px">'+i.vintage+'</span>' : '';
+    return '<tr style="border-bottom:1px solid var(--border)">'+
+      '<td style="padding:10px 16px;font-weight:500">'+i.name+vt+'</td>'+
+      '<td style="padding:10px 16px;font-size:12px;color:var(--muted)">'+((i._supplier)||'—')+'</td>'+
+      '<td style="padding:10px 16px;text-align:center;font-weight:700;font-size:16px;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td>'+
+      '<td style="padding:10px 16px;text-align:center">'+statusBadge(i)+'</td>'+
+      '<td style="padding:10px 16px;text-align:right"><button class="btn btn-outline btn-sm" onclick="openEditModal('+i.id+')">Edit SOH</button></td>'+
+    '</tr>';
+  }
+
+  function makeTable(rows) {
+    return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<thead><tr style="background:var(--surface2)">'+
+      '<th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;width:50%">Item</th>'+
+      '<th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px">Supplier</th>'+
+      '<th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px">SOH</th>'+
+      '<th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px">Status</th>'+
+      '<th></th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  let html = ''; let any = false;
+  INV_LAYOUT.forEach(function(sec) {
+    let secBody = '';
+    sec.groups.forEach(function(grp) {
+      var grpItems = items.filter(function(i) {
+        if (sec.tier && i.price_tier !== sec.tier) return false;
+        if (!grp.cats.includes(i.category)) return false;
+        if (grp.filter && !grp.filter(i)) return false;
+        return pass(i);
+      });
+      if (!grpItems.length) return;
+      any = true;
+      if (grp.label) {
+        secBody += '<div style="padding:9px 18px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--border);background:rgba(255,255,255,0.015)">— '+grp.label+' —</div>';
+      }
+      secBody += makeTable(grpItems.map(makeRow).join(''));
+    });
+    if (!secBody) return;
+    html += '<div style="margin-bottom:22px;border-radius:10px;overflow:hidden;border:1px solid var(--border)">'+
+      '<div style="background:'+sec.color+';padding:12px 20px;display:flex;align-items:center;gap:12px">'+
+      '<span style="font-weight:800;font-size:14px;color:#fff;letter-spacing:1.5px">'+sec.section+'</span>'+
+      (sec.tier?'<span style="font-size:11px;color:rgba(255,255,255,0.65);font-weight:500">'+sec.tier+'</span>':'')+
+      '</div>'+secBody+'</div>';
+  });
+
+  el.innerHTML = any ? html : '<div class="empty" style="padding:48px">No items match your search.</div>';
 }
 
-['inv-search','inv-filter-cat','inv-filter-tier','inv-filter-status'].forEach(id => {
-  $(id)?.addEventListener('input', renderInventory);
-  $(id)?.addEventListener('change', renderInventory);
-});
 
 function openEditModal(id) {
   const item = items.find(i=>i.id===id);
@@ -905,109 +979,169 @@ function loadOrderForm() {
   $('ord-date').value = today();
   $('ord-by').value = $('current-user').value || '';
   renderOrderForm();
-
-  const sups = [...new Set(items.map(i=>i.supplier).filter(Boolean))].sort();
-  const cats = [...new Set(items.map(i=>i.category))].sort();
-  $('ord-filter-sup').innerHTML = '<option value="">All Suppliers</option>' + sups.map(s=>`<option>${s}</option>`).join('');
-  $('ord-filter-cat').innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option>${c}</option>`).join('');
-  $('ord-filter-sup').addEventListener('change', renderOrderForm);
-  $('ord-filter-cat').addEventListener('change', renderOrderForm);
 }
 
 function renderOrderForm() {
-  const supFilter = $('ord-filter-sup').value;
-  const catFilter = $('ord-filter-cat').value;
-  let filtered = items;
-  if (supFilter) filtered = filtered.filter(i=>i.supplier===supFilter);
-  if (catFilter) filtered = filtered.filter(i=>i.category===catFilter);
-
-  $('ord-body').innerHTML = filtered.map(i => {
-    const s = soh(i);
-    const rowClass = i.is_complimentary ? 'comp-row' : '';
-    return `<tr class="${rowClass}" id="ord-row-${i.id}">
-      <td style="font-weight:500">${i.name}</td>
-      <td><span class="badge badge-cat">${i.category}</span></td>
-      <td style="font-size:12px">${i.supplier||'—'}</td>
-      <td class="td-center" style="font-weight:600">${fmtNum(s)}</td>
-      <td class="td-num">${i.luc > 0 ? fmt(i.luc) : '—'}</td>
-      <td class="qty-cell td-center">
-        <input type="number" id="qty-ord-${i.id}" min="0" step="1" placeholder="0"
-          onchange="updateOrderTotal()" oninput="updateOrderTotal()">
-      </td>
-      <td class="td-num" id="line-${i.id}">—</td>
-    </tr>`;
+  const groups = {};
+  items.forEach(i => {
+    const sup = i._supplier || getSupplierName(i.name);
+    if (!groups[sup]) groups[sup] = [];
+    groups[sup].push(i);
+  });
+  const sectionsEl = $('order-sections');
+  sectionsEl.innerHTML = Object.entries(groups).map(([sup, supItems]) => {
+    const info = SUPPLIERS[sup] || { contact: sup, email: '' };
+    const rows = supItems.map(i => {
+      const cs = cartonSize(i);
+      const s = soh(i);
+      const sColor = s<=0?'var(--accent)':s<=3?'#f39c12':'var(--white)';
+      return `<tr>
+        <td style="font-weight:500;max-width:240px">${i.name}</td>
+        <td><span class="badge badge-cat">${i.category}</span></td>
+        <td class="td-center" style="font-weight:700;color:${sColor}">${Math.round(s)}</td>
+        <td style="font-size:11px;color:var(--muted)">${cs.label}</td>
+        <td class="td-center" style="background:rgba(243,156,18,0.06)">
+          <input type="number" id="qty-ord-${i.id}" min="0" step="1" placeholder="0"
+            oninput="updateOrderTotal()" onchange="updateOrderTotal()">
+        </td>
+        <td class="td-num" id="line-${i.id}" style="color:var(--muted)">—</td>
+      </tr>`;
+    }).join('');
+    return `<div style="margin-bottom:20px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px 8px 0 0;padding:10px 16px;display:flex;align-items:center;gap:10px">
+        <span style="font-weight:700;color:var(--white)">🏢 ${sup}</span>
+        <span style="font-size:12px;color:var(--muted)">${info.contact} · ${info.email}</span>
+      </div>
+      <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
+        <table class="order-table" style="margin:0">
+          <thead><tr>
+            <th>Item</th><th>Category</th><th class="td-center">SOH</th>
+            <th>Carton Size</th><th class="td-center" style="background:rgba(243,156,18,0.1)">Cartons to Order</th>
+            <th class="td-num">Est. Cost</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
   }).join('');
 }
 
 function updateOrderTotal() {
   let total = 0;
   items.forEach(i => {
-    const qtyEl = $(`qty-ord-${i.id}`);
-    if (!qtyEl) return;
-    const qty = parseFloat(qtyEl.value)||0;
-    const line = qty * i.luc;
+    const el = $('qty-ord-' + i.id); if (!el) return;
+    const cartons = parseFloat(el.value)||0;
+    const units = cartons * cartonSize(i).qty;
+    const line = units * i.luc;
     total += line;
-    const lineEl = $(`line-${i.id}`);
-    if (lineEl) lineEl.textContent = qty > 0 ? fmt(line) : '—';
+    const lineEl = $('line-' + i.id);
+    if (lineEl) lineEl.textContent = cartons > 0 ? fmt(line) : '—';
   });
-  $('ord-total-label').textContent = `Order total: ${fmt(total)}`;
+  $('ord-total-label').textContent = 'Est. order total: ' + fmt(total);
 }
 
-$('submit-order-btn').addEventListener('click', async () => {
-  const date = $('ord-date').value;
-  const by = $('ord-by').value.trim();
+$('submit-order-btn').addEventListener('click', () => {
+  const date  = $('ord-date').value;
+  const by    = $('ord-by').value.trim();
   const notes = $('ord-notes').value.trim();
-
   if (!date || !by) { toast('Please enter order date and your name', true); return; }
-
   const lines = [];
   items.forEach(i => {
-    const qtyEl = $(`qty-ord-${i.id}`);
-    if (!qtyEl) return;
-    const qty = parseFloat(qtyEl.value)||0;
-    if (qty > 0) lines.push({ item: i, qty });
+    const el = $('qty-ord-' + i.id); if (!el) return;
+    const cartons = parseFloat(el.value)||0;
+    if (cartons > 0) {
+      const units = cartons * cartonSize(i).qty;
+      lines.push({ item: i, cartons, units });
+    }
   });
-
   if (!lines.length) { toast('No quantities entered', true); return; }
-
-  // Save order to DB
-  const { data: order, error: oErr } = await sb.from('orders')
-    .insert({ order_date: date, ordered_by: by, notes, status: 'submitted' })
-    .select().single();
-  if (oErr) { toast('Error saving order: ' + oErr.message, true); return; }
-
-  await sb.from('order_lines').insert(lines.map(l => ({
-    order_id: order.id, item_id: l.item.id, quantity: l.qty, unit_cost: l.item.luc
-  })));
-
-  // Update inventory
-  for (const l of lines) {
-    await sb.from('items').update({ orders_in: (l.item.orders_in||0) + l.qty }).eq('id', l.item.id);
-  }
-
-  // Group by supplier and open mailto drafts
   const bySupplier = {};
   lines.forEach(l => {
-    const sup = l.item.supplier || 'Unassigned';
+    const sup = l.item._supplier || getSupplierName(l.item.name);
     if (!bySupplier[sup]) bySupplier[sup] = [];
     bySupplier[sup].push(l);
   });
+  pendingOrder = { date, by, notes, lines, bySupplier };
+  buildEmailModal(bySupplier, date, by, notes);
+  $('modal-email').classList.add('open');
+});
 
-  Object.entries(bySupplier).forEach(([sup, supLines]) => {
-    const email = (settings.supplierEmails||{})[sup] || '';
-    const subject = encodeURIComponent(`Beverage Order — PwC Sydney — ${date}`);
-    const body = encodeURIComponent(
-      `Hi,\n\nPlease find our weekly beverage order below.\n\nOrdered by: ${by}\nDate: ${date}\n\nORDER ITEMS:\n` +
-      supLines.map(l => `  - ${l.item.name} x${l.qty} @ ${fmt(l.item.luc)}`).join('\n') +
-      `\n\nTotal: ${fmt(supLines.reduce((s,l)=>s+l.qty*l.item.luc,0))}\n\nPlease confirm receipt and expected delivery.\n\nKind regards,\n${by}\nPwC Sydney`
-    );
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+function buildEmailModal(bySupplier, date, by, notes) {
+  const supKeys = Object.keys(bySupplier);
+  activeEmailSupplier = supKeys[0];
+  $('email-tabs').innerHTML = supKeys.map(sup =>
+    `<button onclick="switchEmailTab(this,'${sup}')" style="flex:1;padding:7px 12px;border-radius:6px;background:${sup===activeEmailSupplier?'var(--surface)':'none'};border:none;color:${sup===activeEmailSupplier?'var(--white)':'var(--muted)'};font-size:13px;font-weight:500;cursor:pointer">${sup}</button>`
+  ).join('');
+  window._emailTexts = {};
+  supKeys.forEach(sup => {
+    const info = SUPPLIERS[sup] || { contact: sup };
+    const supLines = bySupplier[sup];
+    const grouped = {};
+    supLines.forEach(l => { const c = l.item.category; if (!grouped[c]) grouped[c]=[]; grouped[c].push(l); });
+    let body = 'Hi ' + info.contact + ',\n\nCan we please have the following delivered to us next week:\n';
+    if (notes) body += '\nNote: ' + notes + '\n';
+    body += '\n';
+    Object.entries(grouped).forEach(([cat, catLines]) => {
+      body += cat + ':\n';
+      catLines.forEach(l => {
+        body += '  ' + l.cartons + ' x carton' + (l.cartons!==1?'s':'') + ' — ' + l.item.name + ' (' + l.units + ' units)\n';
+      });
+      body += '\n';
+    });
+    const sub = supLines.reduce((s,l)=>s+l.units*l.item.luc,0);
+    if (sub>0) body += 'Estimated subtotal: ' + fmt(sub) + '\n\n';
+    body += 'Many thanks,\n' + by + '\nPwC Sydney';
+    window._emailTexts[sup] = body;
   });
+  $('email-preview-text').textContent = window._emailTexts[activeEmailSupplier]||'';
+}
 
-  await fetchItems();
-  renderOrderForm();
-  updateOrderTotal();
-  toast(`✅ Order submitted! ${Object.keys(bySupplier).length} Outlook draft(s) opened.`);
+function switchEmailTab(btn, sup) {
+  activeEmailSupplier = sup;
+  document.querySelectorAll('#email-tabs button').forEach(b => {
+    b.style.background = b===btn?'var(--surface)':'none';
+    b.style.color = b===btn?'var(--white)':'var(--muted)';
+  });
+  $('email-preview-text').textContent = window._emailTexts[sup]||'';
+}
+
+$('copy-email-btn').addEventListener('click', () => {
+  const text = $('email-preview-text').textContent;
+  navigator.clipboard.writeText(text)
+    .then(()=>toast('📋 Email text copied!'))
+    .catch(()=>{
+      const ta=document.createElement('textarea');ta.value=text;
+      document.body.appendChild(ta);ta.select();document.execCommand('copy');
+      document.body.removeChild(ta);toast('📋 Copied!');
+    });
+});
+
+$('confirm-order-btn').addEventListener('click', async () => {
+  if (!pendingOrder) return;
+  const { date, by, notes, lines } = pendingOrder;
+  const btn = $('confirm-order-btn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    const { data: order, error: oErr } = await sb.from('orders')
+      .insert({ order_date:date, ordered_by:by, notes, status:'submitted' })
+      .select().single();
+    if (oErr) throw new Error('Order save failed: ' + oErr.message);
+    const { error: lErr } = await sb.from('order_lines').insert(lines.map(l=>({
+      order_id:order.id, item_id:l.item.id, quantity:l.units, unit_cost:l.item.luc
+    })));
+    if (lErr) throw new Error('Lines save failed: ' + lErr.message);
+    for (const l of lines) {
+      const newVal = (parseFloat(l.item.orders_in)||0) + l.units;
+      const { error: uErr } = await sb.from('items').update({ orders_in: newVal }).eq('id', l.item.id);
+      if (uErr) console.warn('inv update warn:', uErr.message);
+    }
+    await fetchItems();
+    renderOrderForm(); updateOrderTotal();
+    pendingOrder=null;
+    $('modal-email').classList.remove('open');
+    toast('✅ Order saved — inventory updated!');
+  } catch(e) { toast(e.message, true); }
+  finally { btn.textContent='✅ Confirm & Update Inventory'; btn.disabled=false; }
 });
 
 // ── CONSUMPTION ──────────────────────────────────────────────
@@ -1185,14 +1319,10 @@ async function viewEventDetail(id) {
 function loadSettings() {
   const stored = localStorage.getItem('pwc-bev-settings');
   if (stored) settings = JSON.parse(stored);
-
-  // Members
   const userSel = $('current-user');
   userSel.innerHTML = '<option value="">Select your name</option>' +
     (settings.members||[]).map(m=>`<option value="${m}">${m}</option>`).join('');
-
   renderMemberList();
-  renderSupplierEmails();
 }
 
 function saveSettings() {
