@@ -484,28 +484,15 @@
       </div>
     </div>
 
-    <!-- Quick export bar -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">📦 Current Stock</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="printInventory()">Print / PDF</button>
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportInventoryExcel()">Excel</button>
-        </div>
+    <!-- Current stock export -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--white)">📦 Current Stock Snapshot</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Export or print the live inventory right now</div>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">🛒 Order History</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="printOrderHistory()">Print / PDF</button>
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportOrdersExcel()">Excel</button>
-        </div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">📋 Consumption History</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="printConsumptionHistory()">Print / PDF</button>
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportConsumptionExcel()">Excel</button>
-        </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="printInventory()">🖨️ Print / PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="exportInventoryExcel()">📊 Excel</button>
       </div>
     </div>
 
@@ -1568,10 +1555,17 @@ $('submit-consumption-btn').addEventListener('click', async () => {
     }
 
     await fetchItems();
+    const savedEventId = event.id;
+    const savedEventName = name;
     // Reset form
     $('evt-name').value='';
     loadConsumptionForm();
-    toast('✅ Consumption logged — '+lines.length+' item(s) updated');
+    // Show print option toast
+    const printBar = document.createElement('div');
+    printBar.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:14px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.4)';
+    printBar.innerHTML = '<span style="font-size:13px;color:var(--white);font-weight:500">✅ Consumption saved — '+lines.length+' items</span><button class="btn btn-outline btn-sm" onclick="printSingleConsumption('+savedEventId+');this.parentElement.remove()">🖨️ Print Sheet</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button>';
+    document.body.appendChild(printBar);
+    setTimeout(() => { if(printBar.parentElement) printBar.remove(); }, 8000);
   } catch(e) { toast('Error: '+e.message, true); }
   finally { btn.textContent='✅ Submit'; btn.disabled=false; }
 });
@@ -1593,7 +1587,10 @@ async function loadHistory() {
         <td>${lineCount} item${lineCount!==1?'s':''}</td>
         <td class="td-num">${fmt(total)}</td>
         <td style="color:var(--muted);font-size:12px">${o.notes||'—'}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="viewOrderDetail(${o.id})">View</button></td>
+        <td style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn btn-outline btn-sm" onclick="viewOrderDetail(${o.id})">View</button>
+          <button class="btn btn-outline btn-sm" onclick="printSingleOrder(${o.id})">🖨️</button>
+        </td>
       </tr>`;
     }).join('');
   }
@@ -1612,7 +1609,10 @@ async function loadHistory() {
         <td><span class="badge badge-cat">${e.event_type||'—'}</span></td>
         <td>${e.recorded_by||'—'}</td>
         <td>${lineCount} item${lineCount!==1?'s':''}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="viewEventDetail(${e.id})">View</button></td>
+        <td style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn btn-outline btn-sm" onclick="viewEventDetail(${e.id})">View</button>
+          <button class="btn btn-outline btn-sm" onclick="printSingleConsumption(${e.id})">🖨️</button>
+        </td>
       </tr>`;
     }).join('');
   }
@@ -1827,9 +1827,20 @@ $('confirm-order-btn').addEventListener('click', async () => {
 
     await fetchItems();
     loadOrderForm();
+    const savedOrderId = order.id;
     pendingOrder = null;
-    $('modal-email').classList.remove('open');
-    toast('✅ Order saved — inventory updated!');
+    // Update modal to show success + print option
+    $('modal-email').querySelector('.modal-header h3').textContent = '✅ Order Saved!';
+    $('modal-email').querySelector('.modal-body').innerHTML = `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:40px;margin-bottom:12px">✅</div>
+        <div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px">Order confirmed & inventory updated</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:24px">${lines.length} item(s) · ${Object.keys(bySupplier).join(', ')}</div>
+        <button class="btn btn-outline" onclick="printSingleOrder(${savedOrderId});$('modal-email').classList.remove('open')" style="font-size:14px;padding:10px 24px">
+          🖨️ Print this Order
+        </button>
+      </div>`;
+    $('modal-email').querySelector('.modal-footer').innerHTML = '<button class="btn btn-success" onclick="$('modal-email').classList.remove('open')">Done</button>';
   } catch(e) {
     toast(e.message, true);
   } finally {
@@ -1842,6 +1853,94 @@ $('confirm-order-btn').addEventListener('click', async () => {
 // ── REPORTS & PRINT & EXPORT ──────────────────────────────────
 
 // ── Monthly Reports ──────────────────────────────────────────
+
+async function printSingleOrder(orderId) {
+  const { data: o } = await sb.from('orders')
+    .select('*, order_lines(*, items(name,category,is_complimentary))')
+    .eq('id', orderId).single();
+  if (!o) { toast('Order not found', true); return; }
+  const total = (o.order_lines||[]).reduce((s,l)=>s+(l.quantity||0)*(l.unit_cost||0),0);
+  const grouped = {};
+  (o.order_lines||[]).forEach(l => {
+    const cat = l.items?.category||'Other';
+    if (!grouped[cat]) grouped[cat]=[];
+    grouped[cat].push(l);
+  });
+  let html = `<div class="summary-box">
+    <div class="summary-item"><strong>${o.order_date}</strong>Order Date</div>
+    <div class="summary-item"><strong>${o.ordered_by||'—'}</strong>Ordered By</div>
+    <div class="summary-item"><strong>${(o.order_lines||[]).length}</strong>Items</div>
+    <div class="summary-item"><strong>$${total.toFixed(2)}</strong>Est. Total</div>
+  </div>
+  ${o.notes?`<p style="margin-bottom:12px;color:#555"><b>Note:</b> ${o.notes}</p>`:''}`;
+  Object.entries(grouped).forEach(([cat, lines]) => {
+    html += `<h2>${cat}</h2><table><thead><tr><th>Item</th><th>Units Ordered</th><th>Unit Cost</th><th>Line Total</th></tr></thead><tbody>`;
+    lines.forEach(l => {
+      html += `<tr><td>${l.items?.name||'—'}</td><td>${l.quantity}</td><td>$${(l.unit_cost||0).toFixed(2)}</td><td>$${((l.quantity||0)*(l.unit_cost||0)).toFixed(2)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  });
+  html += `<table style="margin-top:8px"><tr style="background:#1a1d2e"><td colspan="3" style="padding:10px 14px;color:#fff;font-weight:700;text-align:right">ORDER TOTAL</td><td style="padding:10px 14px;color:#27ae60;font-weight:900;text-align:right">$${total.toFixed(2)}</td></tr></table>`;
+  openPrintWindow('Order — ' + o.order_date + ' — ' + (o.ordered_by||''), html);
+}
+
+async function printSingleConsumption(eventId) {
+  const { data: e } = await sb.from('events')
+    .select('*, event_lines(*, items(name,category,is_complimentary,opening_soh,orders_in,consumed))')
+    .eq('id', eventId).single();
+  if (!e) { toast('Event not found', true); return; }
+
+  // Build header like the physical form
+  let html = `
+  <table style="border:1px solid #ccc;border-collapse:collapse;width:100%;margin-bottom:20px;font-size:12px">
+    <tr><td style="padding:8px 12px;border:1px solid #ccc;width:130px;font-weight:600">Function Name</td><td style="padding:8px 12px;border:1px solid #ccc;font-weight:700;font-size:14px" colspan="3">${e.event_name||'—'}</td></tr>
+    <tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Booking ID</td><td style="padding:8px 12px;border:1px solid #ccc">${e.booking_id||'—'}</td>
+        <td style="padding:8px 12px;border:1px solid #ccc;font-weight:600;width:130px">Package Type</td><td style="padding:8px 12px;border:1px solid #ccc">${e.event_type||'—'}</td></tr>
+    <tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Date | Time</td><td style="padding:8px 12px;border:1px solid #ccc">${e.event_date||'—'}${e.event_time?' | '+e.event_time:''}</td>
+        <td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Pax</td><td style="padding:8px 12px;border:1px solid #ccc">${e.pax||'—'}</td></tr>
+    <tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Room</td><td style="padding:8px 12px;border:1px solid #ccc">${e.room||'—'}</td>
+        <td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Supervisor</td><td style="padding:8px 12px;border:1px solid #ccc">${e.supervisor||'—'}</td></tr>
+    <tr><td style="padding:8px 12px;border:1px solid #ccc;font-weight:600">Recorded By</td><td style="padding:8px 12px;border:1px solid #ccc" colspan="3">${e.recorded_by||'—'}</td></tr>
+  </table>`;
+
+  // Group items by category
+  const cats = {};
+  (e.event_lines||[]).forEach(l => {
+    const cat = l.items?.category||'Other';
+    if (!cats[cat]) cats[cat]=[];
+    cats[cat].push(l);
+  });
+
+  html += `<table><thead><tr>
+    <th style="width:40%">Product</th>
+    <th>Opening SOH</th>
+    <th style="background:#ffe0e0">Consumed</th>
+    <th>Closing SOH</th>
+    <th>Complimentary</th>
+  </tr></thead><tbody>`;
+
+  // Add category sub-headers and rows
+  Object.entries(cats).forEach(([cat, lines]) => {
+    html += `<tr><td colspan="5" style="background:#1a1d2e;color:#fff;padding:6px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1px">${cat}</td></tr>`;
+    lines.forEach(l => {
+      const item = l.items||{};
+      const openSOH = Math.round((item.opening_soh||0));
+      const consumed = l.quantity||0;
+      const closing = Math.max(0, Math.round((item.opening_soh||0)+(item.orders_in||0)-(item.consumed||0)));
+      html += `<tr>
+        <td style="padding:7px 10px">${item.name||'—'}</td>
+        <td style="padding:7px 10px;text-align:center">${openSOH}</td>
+        <td style="padding:7px 10px;text-align:center;background:#fff5f5;font-weight:700;color:#c0392b">${consumed}</td>
+        <td style="padding:7px 10px;text-align:center">${closing}</td>
+        <td style="padding:7px 10px;text-align:center">${item.is_complimentary?'✓':''}</td>
+      </tr>`;
+    });
+  });
+  html += '</tbody></table>';
+
+  openPrintWindow('Beverage Consumption Sheet — ' + (e.event_name||e.event_date), html);
+}
+
 async function loadReports() {
   const el = document.getElementById('reports-list');
   const { data, error } = await sb.from('monthly_reports')
