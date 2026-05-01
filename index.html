@@ -147,6 +147,41 @@
       <input type="password" id="login-password" placeholder="Enter team password">
     </div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+<script>
+// Early standalone login — runs before main script
+(function(){
+  var AUTH='UHdDU3lkbmV5MjAyNiE=';
+  window.doLogin=function(){
+    var p=document.getElementById('login-password');
+    var e=document.getElementById('login-error');
+    var b=document.getElementById('login-btn');
+    var v=(p?p.value:'').trim();
+    if(e)e.style.display='none';
+    if(!v){if(e){e.textContent='Please enter the password.';e.style.display='block';}return;}
+    if(b){b.disabled=true;b.textContent='Checking…';}
+    setTimeout(function(){
+      if(btoa(v)===AUTH){
+        localStorage.setItem('pwc_bev_auth',AUTH);
+        location.reload();
+      } else {
+        if(e){e.textContent='Incorrect password. Try again.';e.style.display='block';}
+        if(b){b.disabled=false;b.textContent='Sign In';}
+        if(p){p.value='';p.focus();}
+      }
+    },300);
+  };
+  window.doLogout=function(){
+    if(!confirm('Sign out?'))return;
+    localStorage.removeItem('pwc_bev_auth');
+    location.reload();
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    var p=document.getElementById('login-password');
+    if(p)p.addEventListener('keydown',function(e){if(e.key==='Enter')window.doLogin();});
+  });
+})();
+</script>
+
     <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:18px">Access restricted to PwC Sydney beverage team</p>
   </div>
 </div>
