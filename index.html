@@ -419,6 +419,27 @@ function fmt(n){ return isNaN(n)?'$0.00':'$'+Number(n).toFixed(2).replace(/\B(?=
 function fmtN(n){ return Math.max(0,Math.round(Number(n)||0)).toString(); }
 function td(){ return new Date().toISOString().split('T')[0]; }
 function soh(i){ return (parseFloat(i.opening_soh)||0)+(parseFloat(i.orders_in)||0)-(parseFloat(i.consumed)||0); }
+// Popularity ordering: most-used items pinned to the top of every list (Inventory, New Order, Consumption).
+var POPULAR=[
+  'Veuve Cliquot Brut NV',
+  'Croser Brut NV',
+  'Stonier Reserve Chardonnay 2022',
+  'Brokenwood Pinot Gris 2024',
+  'Stonier Reserve Pinot Noir 2022',
+  'Brokenwood Pinot Noir 2024',
+  'James Squire Shackles 330ml',
+  'Young Henry Newtowner 330ml',
+  'Coopers Light 355ml',
+  'Heaps Normal Quiet XPA'
+];
+function popRank(i){ var idx=POPULAR.indexOf(i.name); return idx<0?9999:idx; }
+function sortByPopularity(arr){
+  return arr.slice().sort(function(a,b){
+    var ra=popRank(a), rb=popRank(b);
+    if(ra!==rb) return ra-rb;
+    return (a.id||0)-(b.id||0); // stable fallback to original id order
+  });
+}
 function sbadge(i){ var s=soh(i); return s<=0?'<span class="badge bout">Out</span>':s<=3?'<span class="badge blow">Low</span>':'<span class="badge bok">OK</span>'; }
 function toast(m,e){ var t=G('toast');t.textContent=m;t.className=e?'err':'';t.style.display='block';setTimeout(function(){t.style.display='none';},3500); }
 function closeMo(id){ G(id).classList.remove('on'); }
@@ -541,8 +562,7 @@ function renderInv(){
   var el=G('ibody');
   var sr=(G('isrch')||{value:''}).value.toLowerCase();
   var sf=(G('istat')||{value:''}).value;
-  function pass(i){var s=soh(i);if(sr&&!i.name.toLowerCase().includes(sr))return false;if(sf==='ok'&&s<=3)return false;if(sf==='low'&&!(s>0&&s<=3))return false;if(sf==='out'&&s>0)return false;return true;}
-  function makeRow(i){
+  function pass(i){var s=soh(i);if(sr&&!i.name.toLowerCase().includes(sr))return false;if(sf==='ok'&&s<=3)return false;if(sf==='low'&&!(s>0&&s<=3))return false;if(sf==='out'&&s>0)return false;return true;}  function makeRow(i){
     var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)';
     var vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';
     return '<tr style="border-bottom:1px solid var(--bdr);cursor:pointer" onclick="openEdit('+i.id+')" title="Click to edit SOH">'
@@ -566,6 +586,7 @@ function renderInv(){
         if(grp.f&&!grp.f(i))return false;
         return pass(i);
       });
+      gi=sortByPopularity(gi);
       if(!gi.length)return;
       any=true;
       if(grp.l){
@@ -633,7 +654,7 @@ function pickSup(idx){
 }
 
 function renderOItems(){
-  var si=items.filter(function(i){return i._sup===activeSup;});
+  var si=sortByPopularity(items.filter(function(i){return i._sup===activeSup;}));
   var grps={};
   si.forEach(function(i){
     var g=i.category;
@@ -766,25 +787,44 @@ function swCat(idx){var c=CCATS[idx];if(c){renderCTabs(c[0]);renderCGrp(c[0]);va
 function renderCGrp(catLabel){
   var cd=CCATS.find(function(c){return c[0]===catLabel;});if(!cd)return;
   var cats=cd[1];
-  var ci=items.filter(function(i){return cats.includes(i.category);});
+  var ci=sortByPopularity(items.filter(function(i){return cats.includes(i.category);}));
   var subs={};
   ci.forEach(function(i){var s=i.category;if(s==='Soft Drink')s=i.name.toLowerCase().includes('1.25')?'Soft Drink 1.25L':'Soft Drink 330ml';if(!subs[s])subs[s]=[];subs[s].push(i);});
   var html=Object.keys(subs).map(function(sub){
     var si=subs[sub];
     var rows=si.map(function(i){
       var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary,vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
-      var ev=(function(){var el=document.getElementById('qc'+i.id);return el?el.value:'';})();
-      return'<tr style="border-bottom:1px solid var(--bdr);'+(ic?'background:rgba(41,128,185,.04)':'')+'"><td style="padding:10px 14px"><div style="font-weight:500">'+i.name+vt+'</div>'+(ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+'</td><td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 14px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><button onclick="adjC('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button><input type="number" id="qc'+i.id+'" min="0" step="1" placeholder="0" value="'+ev+'" style="width:54px;background:var(--sur);border:1.5px solid '+(ic?'rgba(41,128,185,.5)':'var(--bdr)')+';color:var(--wht);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" oninput="onCI('+i.id+')"><button onclick="adjC('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button></div></td></tr>';
+      var stepper=function(id,onAdj,oninput,val){return'<div style="display:flex;align-items:center;justify-content:center;gap:8px"><button onclick="'+onAdj+'('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button><input type="number" id="'+id+'" min="0" step="1" placeholder="0" value="'+val+'" style="width:54px;background:var(--sur);border:1.5px solid '+(ic?'rgba(41,128,185,.5)':'var(--bdr)')+';color:var(--wht);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" oninput="'+oninput+'('+i.id+')"><button onclick="'+onAdj+'('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button></div>';};
+      var nameCell='<td style="padding:10px 14px"><div style="font-weight:500">'+i.name+vt+'</div>'+(ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+'</td>';
+      var sohCell='<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td>';
+      var op=(function(){var el=document.getElementById('qo_'+i.id);return el?el.value:Math.max(0,Math.round(s));})();
+      var cl=(function(){var el=document.getElementById('qcl_'+i.id);return el?el.value:'';})();
+      var uc=Math.max(0,(parseFloat(op)||0)-(parseFloat(cl)||0));
+      return'<tr style="border-bottom:1px solid var(--bdr);'+(ic?'background:rgba(41,128,185,.04)':'')+'">'+nameCell+sohCell+
+        '<td style="padding:10px 14px;text-align:center">'+stepper('qo_'+i.id,'adjOpen','onOC',op)+'</td>'+
+        '<td style="padding:10px 14px;text-align:center">'+stepper('qcl_'+i.id,'adjClose','onOC',cl)+'</td>'+
+        '<td style="padding:10px 14px;text-align:center;font-weight:700;font-size:15px;color:var(--acc);background:rgba(233,69,96,.04)" id="ucd_'+i.id+'">'+uc+'</td>'+
+        '<input type="hidden" id="qc'+i.id+'" value="'+(uc||'')+'">'+
+        '</tr>';
     }).join('');
     var sl=Object.keys(subs).length>1?sub:null;
-    return'<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'+(sl?'<div style="background:var(--sur2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px">'+sl+'</div>':'')+'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--acc);background:rgba(233,69,96,.04)">Units Consumed</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    var head = '<thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Opening</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Closing</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--acc);background:rgba(233,69,96,.04)">Units Consumed</th></tr></thead>';
+    return'<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'+(sl?'<div style="background:var(--sur2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px">'+sl+'</div>':'')+'<table style="width:100%;border-collapse:collapse;font-size:13px">'+head+'<tbody>'+rows+'</tbody></table></div>';
   }).join('');
   G('cgrp').innerHTML=html||'<div class="empty">No items in this category.</div>';
   updateCSummary();
 }
 
-function adjC(id,d){var el=document.getElementById('qc'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);onCI(id);}
-function onCI(id){updateCSummary();renderCTabs(activeCCat);}
+function adjOpen(id,d){var el=document.getElementById('qo_'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);onOC(id);}
+function adjClose(id,d){var el=document.getElementById('qcl_'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);onOC(id);}
+function onOC(id){
+  var op=parseFloat((document.getElementById('qo_'+id)||{}).value)||0;
+  var cl=parseFloat((document.getElementById('qcl_'+id)||{}).value)||0;
+  var uc=Math.max(0,op-cl);
+  var hid=document.getElementById('qc'+id); if(hid) hid.value=uc||'';
+  var disp=document.getElementById('ucd_'+id); if(disp) disp.textContent=uc;
+  updateCSummary(); renderCTabs(activeCCat);
+}
 
 function updateCSummary(){
   var en=items.filter(function(i){var el=document.getElementById('qc'+i.id);return el&&parseFloat(el.value)>0;});
@@ -1132,6 +1172,59 @@ async function exportRepXL(mk){
   toast('📊 Exported to Excel');
 }
 
+// === Stepper enhancement: wrap every <input type="number"> with − / + buttons ===
+(function(){
+  var STEPPER_CSS = '\
+    .stepper{display:inline-flex;align-items:center;gap:6px;justify-content:center}\
+    .stepper input[type=number]{-moz-appearance:textfield}\
+    .stepper input[type=number]::-webkit-outer-spin-button,.stepper input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}\
+    .stepper-btn{background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--wht);font-size:16px;font-weight:700;cursor:pointer;line-height:1;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:background .12s,border-color .12s}\
+    .stepper-btn:hover{background:var(--bdr);border-color:var(--acc)}\
+    .stepper-btn:active{transform:scale(.94)}';
+  var s=document.createElement('style'); s.textContent=STEPPER_CSS; document.head.appendChild(s);
+
+  function bump(inp,d){
+    var step=parseFloat(inp.step)||1;
+    var min=inp.min!==''?parseFloat(inp.min):-Infinity;
+    var max=inp.max!==''?parseFloat(inp.max):Infinity;
+    var cur=parseFloat(inp.value)||0;
+    var next=Math.min(max,Math.max(min,cur+d*step));
+    // preserve int formatting if step is integer
+    inp.value = (step%1===0) ? String(Math.round(next)) : String(next);
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    inp.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+
+  function wrap(inp){
+    if(inp.dataset.stepperized) return;
+    if(inp.closest('.stepper')) { inp.dataset.stepperized='1'; return; }
+    // Skip inputs that already have hand-rolled − / + buttons as immediate siblings
+    var prev=inp.previousElementSibling, next=inp.nextElementSibling;
+    var isStep=function(el){ if(!el||el.tagName!=='BUTTON')return false; var t=(el.textContent||'').trim(); return t==='−'||t==='-'||t==='+'; };
+    if(isStep(prev)&&isStep(next)){ inp.dataset.stepperized='1'; return; }
+    inp.dataset.stepperized='1';
+    var w=document.createElement('span'); w.className='stepper';
+    var minus=document.createElement('button'); minus.type='button'; minus.className='stepper-btn'; minus.textContent='−'; minus.tabIndex=-1;
+    var plus =document.createElement('button'); plus.type='button';  plus.className='stepper-btn';  plus.textContent='+';  plus.tabIndex=-1;
+    minus.addEventListener('click',function(e){e.preventDefault();bump(inp,-1);});
+    plus .addEventListener('click',function(e){e.preventDefault();bump(inp,+1);});
+    var p=inp.parentNode; p.insertBefore(w, inp); w.appendChild(minus); w.appendChild(inp); w.appendChild(plus);
+  }
+
+  function scan(){ document.querySelectorAll('input[type="number"]').forEach(wrap); }
+  // initial + observe DOM mutations (the app rerenders innerHTML in many places)
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',scan); else scan();
+  new MutationObserver(function(muts){
+    for(var i=0;i<muts.length;i++){
+      var m=muts[i];
+      for(var j=0;j<m.addedNodes.length;j++){
+        var n=m.addedNodes[j]; if(n.nodeType!==1) continue;
+        if(n.matches && n.matches('input[type="number"]')) wrap(n);
+        if(n.querySelectorAll) n.querySelectorAll('input[type="number"]').forEach(wrap);
+      }
+    }
+  }).observe(document.body,{childList:true,subtree:true});
+})();
 </script>
 </body>
 </html>
