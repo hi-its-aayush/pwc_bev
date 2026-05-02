@@ -1136,13 +1136,8 @@ async function printCon(id){
     });
   });
 
-  html+='</tbody>'
-    +'<tfoot><tr style="background:#f0f0f0;font-weight:700">'
-    +'<td style="padding:8px 10px">TOTAL</td>'
-    +'<td class="num op">'+Math.round(totalOpen)+'</td>'
-    +(isClosed?'<td class="num cl">'+Math.round(totalClose)+'</td><td class="num con">'+Math.round(totalCon)+'</td>':'<td class="num"></td><td class="num"></td>')
-    +'</tr></tfoot>'
-    +'</table>'
+
+  html+='</tbody></table>';
     +(isClosed?'':'<p style="margin-top:16px;font-size:11px;color:#999;text-align:center">Closing counts not yet recorded. Print after closing the event for the full report.</p>');
 
   var w=window.open('','_blank','width=860,height=900');
