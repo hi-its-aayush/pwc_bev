@@ -430,25 +430,76 @@ function swCat(idx){var c=CCATS[idx];if(c){renderCTabs(c[0]);renderCGrp(c[0]);va
 function renderCGrp(catLabel){
   var cd=CCATS.find(function(c){return c[0]===catLabel;});if(!cd)return;
   var cats=cd[1];
-  var ci=sortByPopularity(items.filter(function(i){return cats.includes(i.category);}));
+  var ci=typeof sortByPopularity==='function'
+    ? sortByPopularity(items.filter(function(i){return cats.includes(i.category);}))
+    : items.filter(function(i){return cats.includes(i.category);});
   var subs={};
-  ci.forEach(function(i){var s=i.category;if(s==='Soft Drink')s=i.name.toLowerCase().includes('1.25')?'Soft Drink 1.25L':'Soft Drink 330ml';if(!subs[s])subs[s]=[];subs[s].push(i);});
+  ci.forEach(function(i){
+    var s=i.category;
+    if(s==='Soft Drink') s=i.name.toLowerCase().includes('1.25')?'Soft Drink 1.25L':'Soft Drink 330ml';
+    if(!subs[s]) subs[s]=[];
+    subs[s].push(i);
+  });
   var html=Object.keys(subs).map(function(sub){
     var si=subs[sub];
     var rows=si.map(function(i){
-      var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary,vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
-      var ev=(function(){var el=document.getElementById('qc'+i.id);return el?el.value:'';})();
-      return'<tr style="border-bottom:1px solid var(--bdr);'+(ic?'background:rgba(41,128,185,.04)':'')+'"><td style="padding:10px 14px"><div style="font-weight:500">'+i.name+vt+'</div>'+(ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+'</td><td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td><td style="padding:10px 14px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:8px"><button onclick="adjC('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button><input type="number" id="qc'+i.id+'" min="0" step="1" placeholder="0" value="'+ev+'" style="width:54px;background:var(--sur);border:1.5px solid '+(ic?'rgba(41,128,185,.5)':'var(--bdr)')+';color:var(--wht);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" oninput="onCI('+i.id+')"><button onclick="adjC('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button></div></td></tr>';
+      var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary;
+      var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
+      var existEl=document.getElementById('qop_'+i.id);
+      var curVal=existEl?existEl.value:'';
+      return '<tr style="border-bottom:1px solid var(--bdr);'+(ic?'background:rgba(41,128,185,.04)':'')+'">'+
+        '<td style="padding:10px 14px">'+
+          '<div style="font-weight:500">'+i.name+vt+'</div>'+
+          (ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+
+        '</td>'+
+        '<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td>'+
+        '<td style="padding:10px 14px;text-align:center;background:rgba(41,128,185,.06)">'+
+          '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'+
+            '<button onclick="adjOp('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">−</button>'+
+            '<input type="number" id="qop_'+i.id+'" min="0" step="1" placeholder="0" value="'+curVal+'"'+
+            ' style="width:54px;background:var(--sur);border:1.5px solid '+(ic?'rgba(41,128,185,.5)':'var(--bdr)')+';color:var(--wht);border-radius:6px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;font-family:inherit"'+
+            ' oninput="onOpInput('+i.id+')">'+
+            '<button onclick="adjOp('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--txt);font-size:16px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit">+</button>'+
+          '</div>'+
+        '</td>'+
+        '<input type="hidden" id="qc'+i.id+'" value="'+curVal+'">'+
+      '</tr>';
     }).join('');
     var sl=Object.keys(subs).length>1?sub:null;
-    return'<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'+(sl?'<div style="background:var(--sur2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px">'+sl+'</div>':'')+'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:rgba(255,255,255,.02)"><th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th><th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--acc);background:rgba(233,69,96,.04)">Units Consumed</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    return '<div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'+
+      (sl?'<div style="background:var(--sur2);padding:8px 14px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px">'+sl+'</div>':'')+
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<thead><tr style="background:rgba(255,255,255,.02)">'+
+        '<th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th>'+
+        '<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th>'+
+        '<th style="padding:7px 14px;text-align:center;font-size:10px;color:#5dade2;background:rgba(41,128,185,.06)">Opening Count</th>'+
+      '</tr></thead>'+
+      '<tbody>'+rows+'</tbody></table></div>';
   }).join('');
   G('cgrp').innerHTML=html||'<div class="empty">No items in this category.</div>';
   updateCSummary();
 }
 
-function adjC(id,d){var el=document.getElementById('qc'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);onCI(id);}
-function onCI(id){updateCSummary();renderCTabs(activeCCat);}
+function adjOp(id,d){
+  var el=document.getElementById('qop_'+id);if(!el)return;
+  el.value=Math.max(0,(parseFloat(el.value)||0)+d);
+  onOpInput(id);
+}
+
+function onOpInput(id){
+  var el=document.getElementById('qop_'+id);
+  var hid=document.getElementById('qc'+id);
+  if(hid) hid.value=el?el.value:'';
+  updateCSummary();
+  renderCTabs(activeCCat);
+}
+
+// Stubs for backward compat
+function calcConsumed(id){onOpInput(id);}
+function adjC(id,d){adjOp(id,d);}
+function adjOpen(id,d){adjOp(id,d);}
+function adjClose(id,d){}
+function onOC(id){onOpInput(id);}
 
 function updateCSummary(){
   var en=items.filter(function(i){var el=document.getElementById('qc'+i.id);return el&&parseFloat(el.value)>0;});
@@ -485,11 +536,41 @@ async function loadHist(){
   var ro=await sb.from('orders').select('*,order_lines(*,items(name))').order('created_at',{ascending:false});
   var ob=G('ohb');
   ob.innerHTML=!(ro.data&&ro.data.length)?'<tr><td colspan="6"><div class="empty">No orders yet</div></td></tr>':
-    ro.data.map(function(o){var cnt=o.order_lines?o.order_lines.length:0,tot=(o.order_lines||[]).reduce(function(s,l){return s+(l.quantity||0)*(l.unit_cost||0);},0);return'<tr><td>'+o.order_date+'</td><td style="font-weight:500">'+(o.ordered_by||'—')+'</td><td>'+cnt+' item'+(cnt!==1?'s':'')+'</td><td>'+fmt(tot)+'</td><td style="color:var(--mut);font-size:12px">'+(o.notes||'—')+'</td><td style="display:flex;gap:6px;justify-content:flex-end"><button class="btn bo bsm" onclick="viewOrd('+o.id+')">View</button><button class="btn bo bsm" onclick="printOrd('+o.id+')">🖨️</button></td></tr>';}).join('');
+    ro.data.map(function(o){
+      var cnt=o.order_lines?o.order_lines.length:0;
+      var tot=(o.order_lines||[]).reduce(function(s,l){return s+(l.quantity||0)*(l.unit_cost||0);},0);
+      return '<tr>'
+        +'<td>'+o.order_date+'</td>'
+        +'<td style="font-weight:500">'+(o.ordered_by||'—')+'</td>'
+        +'<td>'+cnt+' item'+(cnt!==1?'s':'')+'</td>'
+        +'<td>'+fmt(tot)+'</td>'
+        +'<td style="color:var(--mut);font-size:12px">'+(o.notes||'—')+'</td>'
+        +'<td style="display:flex;gap:6px;justify-content:flex-end">'
+          +'<button class="btn bo bsm" onclick="viewOrd('+o.id+')">View</button>'
+          +'<button class="btn bo bsm" onclick="editOrd('+o.id+')">✏️ Edit</button>'
+          +'<button class="btn bo bsm" onclick="printOrd('+o.id+')">🖨️</button>'
+        +'</td>'
+        +'</tr>';
+    }).join('');
+
   var re=await sb.from('events').select('*,event_lines(*,items(name))').order('created_at',{ascending:false});
   var eb=G('chb');
   eb.innerHTML=!(re.data&&re.data.length)?'<tr><td colspan="6"><div class="empty">No events yet</div></td></tr>':
-    re.data.map(function(e){var cnt=e.event_lines?e.event_lines.length:0;return'<tr><td>'+e.event_date+'</td><td style="font-weight:500">'+e.event_name+'</td><td><span class="badge bcat">'+(e.event_type||'—')+'</span></td><td>'+(e.recorded_by||'—')+'</td><td>'+cnt+' item'+(cnt!==1?'s':'')+'</td><td style="display:flex;gap:6px;justify-content:flex-end"><button class="btn bo bsm" onclick="viewEvt('+e.id+')">View</button><button class="btn bo bsm" onclick="printCon('+e.id+')">🖨️</button></td></tr>';}).join('');
+    re.data.map(function(e){
+      var cnt=e.event_lines?e.event_lines.length:0;
+      return '<tr>'
+        +'<td>'+e.event_date+'</td>'
+        +'<td style="font-weight:500">'+e.event_name+'</td>'
+        +'<td><span class="badge bcat">'+(e.event_type||'—')+'</span></td>'
+        +'<td>'+(e.recorded_by||'—')+'</td>'
+        +'<td>'+cnt+' item'+(cnt!==1?'s':'')+'</td>'
+        +'<td style="display:flex;gap:6px;justify-content:flex-end">'
+          +'<button class="btn bo bsm" onclick="viewEvt('+e.id+')">View</button>'
+          +'<button class="btn bo bsm" onclick="editEvt('+e.id+')">✏️ Edit</button>'
+          +'<button class="btn bo bsm" onclick="printCon('+e.id+')">🖨️</button>'
+        +'</td>'
+        +'</tr>';
+    }).join('');
 }
 
 async function viewOrd(id){
@@ -707,6 +788,345 @@ async function autoReport(){
     if(!r.count) await genReport(true);
   }
 }
+
+// ── PRINT ─────────────────────────────────────────────────────
+function pw(title,body){
+  var w=window.open('','_blank','width=900,height=700');
+  var css='body{font-family:Calibri,Arial,sans-serif;font-size:12px;color:#111;margin:20px 32px}h2{font-size:14px;color:#444;margin:16px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px}th{background:#1a1d2e;color:#fff;padding:7px 10px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase}td{padding:6px 10px;border-bottom:1px solid #e5e5e5}tr:nth-child(even) td{background:#f8f8f8}.hdr{display:flex;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1a1d2e}.sb{background:#f0f3f4;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap}.si strong{display:block;font-size:16px}.sh{background:#1a1d2e;color:#fff;padding:6px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-top:12px}.ok{color:#27ae60;font-weight:700}.lo{color:#f39c12;font-weight:700}.ou{color:#e94560;font-weight:700}@media print{body{margin:10px 16px}}';
+  var hdr='<div class="hdr"><div><b style="font-size:18px">PwC Sydney Beverage Portal</b><div style="margin-top:2px">'+title+'</div></div><div style="text-align:right;color:#666;font-size:11px">'+new Date().toLocaleString('en-AU')+'</div></div>';
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html><head><title>'+title+'</title><style>'+css+'</style></head><body>'+hdr+body+'</body></html>');
+  w.document.close();
+}
+
+function printInv(){
+  var LAYOUT=[{l:'LUXE',t:'Luxe $65+',c:['Champagne','Sparkling','White','Red']},{l:'CLIENT',t:'Client $30-65',c:['Champagne','Sparkling','White','Rose','Red']},{l:'STAFF',t:'Staff <$30',c:['Sparkling','White','Rose','Red','Dessert Wine']},{l:'NON-ALCOHOLIC',t:'Non-Alc',c:['Non-Alc Wine','Non-Alc Cocktail']},{l:'BEER',t:null,c:['Beer']},{l:'SOFT DRINKS',t:null,c:['Soft Drink','Water']},{l:'JUICES',t:null,c:['Juice']},{l:'SPIRITS & MIXERS',t:null,c:['Spirit','Mixer']}];
+  var tv=items.reduce(function(s,i){return s+Math.max(0,soh(i))*i.luc;},0);
+  var html='<div class="sb"><div class="si"><strong>'+fmt(tv)+'</strong>Portfolio Value</div><div class="si"><strong>'+items.length+'</strong>Total Items</div><div class="si"><strong class="ok">'+items.filter(function(i){return soh(i)>0;}).length+'</strong>In Stock</div><div class="si"><strong class="ou">'+items.filter(function(i){return soh(i)<=0;}).length+'</strong>Out of Stock</div></div>';
+  LAYOUT.forEach(function(sec){
+    var si=items.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;return sec.c.includes(i.category);});
+    if(!si.length)return;
+    html+='<div class="sh">'+sec.l+(sec.t?' — '+sec.t:'')+'</div><table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>SOH</th><th>Status</th></tr></thead><tbody>';
+    si.forEach(function(i){var s=Math.max(0,soh(i)),cl=s<=0?'ou':s<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+(i.vintage||'')+'</td><td>'+(i._sup||'')+'</td><td>'+Math.round(i.opening_soh||0)+'</td><td>'+Math.round(i.orders_in||0)+'</td><td>'+Math.round(i.consumed||0)+'</td><td><strong>'+Math.round(s)+'</strong></td><td class="'+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
+    html+='</tbody></table>';
+  });
+  pw('Inventory — '+new Date().toLocaleDateString('en-AU'),html);
+}
+
+async function printOrd(id){
+  var r=await sb.from('orders').select('*,order_lines(*,items(name,category))').eq('id',id).single();
+  if(r.error){toast('Not found',true);return;}
+  var o=r.data,tot=(o.order_lines||[]).reduce(function(s,l){return s+(l.quantity||0)*(l.unit_cost||0);},0);
+  var grp={};
+  (o.order_lines||[]).forEach(function(l){var c=l.items?l.items.category:'Other';if(!grp[c])grp[c]=[];grp[c].push(l);});
+  var html='<div class="sb"><div class="si"><strong>'+o.order_date+'</strong>Date</div><div class="si"><strong>'+(o.ordered_by||'—')+'</strong>Ordered By</div><div class="si"><strong>'+((o.order_lines||[]).length)+'</strong>Items</div><div class="si"><strong>'+fmt(tot)+'</strong>Total</div></div>'+(o.notes?'<p style="margin-bottom:12px"><b>Note:</b> '+o.notes+'</p>':'');
+  Object.keys(grp).forEach(function(cat){html+='<h2>'+cat+'</h2><table><thead><tr><th>Item</th><th>Units</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody>';grp[cat].forEach(function(l){html+='<tr><td>'+(l.items?l.items.name:'—')+'</td><td>'+l.quantity+'</td><td>'+fmt(l.unit_cost)+'</td><td>'+fmt((l.quantity||0)*(l.unit_cost||0))+'</td></tr>';});html+='</tbody></table>';});
+  html+='<table><tr style="background:#1a1d2e"><td colspan="3" style="padding:10px;color:#fff;font-weight:700;text-align:right">ORDER TOTAL</td><td style="padding:10px;color:#27ae60;font-weight:900;text-align:right">'+fmt(tot)+'</td></tr></table>';
+  pw('Order — '+o.order_date+' — '+(o.ordered_by||''),html);
+}
+
+async function printCon(id){
+  var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary))').eq('id',id).single();
+  if(r.error){toast('Not found',true);return;}
+  var e=r.data;
+
+  // Group items by beverage category for the sheet layout
+  var CAT_ORDER=['Champagne','Sparkling','White','Rose','Red','Dessert Wine',
+    'Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink','Water','Juice','Spirit','Mixer'];
+  var CAT_LABEL={'Champagne':'Champagne & Sparkling','Sparkling':'Champagne & Sparkling',
+    'White':'White Wine','Rose':'Rosé','Red':'Red Wine','Dessert Wine':'Dessert Wine',
+    'Non-Alc Wine':'Non-Alc Wine','Non-Alc Cocktail':'Non-Alc Cocktail',
+    'Beer':'Beer','Soft Drink':'Soft Drinks','Water':'Water','Juice':'Juices',
+    'Spirit':'Spirits','Mixer':'Mixers'};
+
+  // Build grouped rows
+  var grouped={};
+  (e.event_lines||[]).forEach(function(l){
+    var cat=l.items?l.items.category:'Other';
+    if(!grouped[cat]) grouped[cat]=[];
+    grouped[cat].push(l);
+  });
+
+  var itemRows='';
+  // Track which labels we have already printed (Champagne+Sparkling merge)
+  var printed={};
+  CAT_ORDER.forEach(function(cat){
+    var items=grouped[cat];
+    if(!items||!items.length) return;
+    var label=CAT_LABEL[cat]||cat;
+    var isNew=!printed[label];
+    printed[label]=true;
+    items.forEach(function(l,idx){
+      var name=l.items?l.items.name:'—';
+      var qty=l.quantity||0; // stored as opening count until closing entered
+      itemRows+='<tr>'+
+        (idx===0&&isNew?'<td rowspan="XXX" style="border:1px solid #ccc;padding:6px 8px;font-weight:600;vertical-align:top;font-size:11px;writing-mode:horizontal-tb;width:90px">'+label+'</td>':'<td style="border:1px solid #ccc"></td>')+
+        '<td style="border:1px solid #ccc;padding:6px 10px">'+name+'</td>'+
+        '<td style="border:1px solid #ccc;padding:6px 10px;text-align:center">'+(qty>0?qty:'')+'</td>'+
+        '<td style="border:1px solid #ccc;padding:6px 10px;text-align:center"></td>'+
+        '<td style="border:1px solid #ccc;padding:6px 10px;text-align:center"></td>'+
+      '</tr>';
+    });
+  });
+
+  var css='body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:16px 24px}'
+    +'.title{text-align:center;font-size:16px;font-weight:700;margin-bottom:14px}'
+    +'.info-table{width:100%;border-collapse:collapse;margin-bottom:16px}'
+    +'.info-table td{border:1px solid #aaa;padding:6px 10px}'
+    +'.info-table td:first-child{width:110px;font-weight:600;background:#f5f5f5}'
+    +'.items-table{width:100%;border-collapse:collapse;font-size:12px}'
+    +'.items-table th{border:1px solid #aaa;padding:7px 10px;background:#1a1d2e;color:#fff;font-weight:700;text-align:center}'
+    +'.items-table th:first-child{text-align:left}'
+    +'.items-table td{border:1px solid #ccc;padding:7px 10px;min-height:22px}'
+    +'@media print{body{margin:8px 16px}}';
+
+  var html='<div class="title">Beverage Consumption Sheet</div>'
+    +'<table class="info-table">'
+      +'<tr><td>Function Name</td><td>'+(e.event_name||'')+'</td></tr>'
+      +'<tr><td>Booking ID</td><td>'+(e.booking_id||'')+'</td></tr>'
+      +'<tr><td>Date | Time</td><td>'+(e.event_date||'')+' | '+(e.event_time||'')+'</td></tr>'
+      +'<tr><td>Room</td><td>'+(e.room||'')+'</td></tr>'
+      +'<tr><td>Pax</td><td>'+(e.pax||'')+'</td></tr>'
+      +'<tr><td>Package Type</td><td>'+(e.event_type||'')+'</td></tr>'
+      +'<tr><td>Supervisor</td><td>'+(e.supervisor||'')+'</td></tr>'
+    +'</table>'
+    +'<table class="items-table">'
+      +'<thead><tr>'
+        +'<th style="width:95px"></th>'
+        +'<th style="text-align:left;width:40%">Product</th>'
+        +'<th style="width:80px">Opening</th>'
+        +'<th style="width:80px">Closing</th>'
+        +'<th style="width:80px">Consumed</th>'
+      +'</tr></thead>'
+      +'<tbody>'+itemRows+'</tbody>'
+    +'</table>';
+
+  var w=window.open('','_blank','width=860,height=900');
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html><head><title>Consumption Sheet — '+e.event_name+'</title><style>'+css+'</style></head><body>'+html+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},400);
+}
+
+async function printRep(mk){
+  var r=await sb.from('monthly_reports').select('*').eq('report_month',mk).single();
+  if(r.error){toast('Not found',true);return;}
+  var rep=r.data,sn=rep.snapshot||{},si=sn.items||[];
+  var html='<div class="sb"><div class="si"><strong>'+(sn.total_value?fmt(sn.total_value):'—')+'</strong>Portfolio Value</div><div class="si"><strong>'+(sn.item_count||0)+'</strong>Items</div><div class="si"><strong class="ok">'+(sn.in_stock||0)+'</strong>In Stock</div><div class="si"><strong class="ou">'+(sn.out_of_stock||0)+'</strong>Out</div><div class="si"><strong>'+(sn.order_count||0)+'</strong>Orders</div><div class="si"><strong>'+(sn.event_count||0)+'</strong>Events</div></div><table><thead><tr><th>Item</th><th>Category</th><th>Tier</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>Closing SOH</th><th>Status</th></tr></thead><tbody>';
+  si.forEach(function(i){var cl=i.current_soh<=0?'ou':i.current_soh<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+i.category+'</td><td>'+i.price_tier+'</td><td>'+(i.supplier||'—')+'</td><td>'+Math.round(i.opening_soh||0)+'</td><td>'+Math.round(i.orders_in||0)+'</td><td>'+Math.round(i.consumed||0)+'</td><td><strong>'+Math.round(i.current_soh||0)+'</strong></td><td class="'+cl+'">'+(i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK')+'</td></tr>';});
+  html+='</tbody></table>';
+  pw('Stocktake Report — '+(rep.report_label||mk),html);
+}
+
+// ── EXCEL ─────────────────────────────────────────────────────
+function exportInvXL(){
+  if(typeof XLSX==='undefined'){toast('Excel loading, try again',true);return;}
+  var d=[['Item','Category','Price Tier','Supplier','Vintage','Opening','Ordered','Consumed','SOH','Status']];
+  items.forEach(function(i){var s=Math.max(0,soh(i));d.push([i.name,i.category,i.price_tier,i._sup||i.supplier||'',i.vintage||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(s),s<=0?'OUT':s<=3?'LOW':'OK']);});
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(d);
+  ws['!cols']=[{wch:40},{wch:16},{wch:16},{wch:18},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,'Inventory');
+  XLSX.writeFile(wb,'PwC_Inventory_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('📊 Exported to Excel');
+}
+
+async function exportRepXL(mk){
+  if(typeof XLSX==='undefined'){toast('Excel loading, try again',true);return;}
+  var r=await sb.from('monthly_reports').select('*').eq('report_month',mk).single();
+  if(r.error){toast('Not found',true);return;}
+  var sn=r.data.snapshot||{},si=sn.items||[];
+  var d=[['Item','Category','Tier','Supplier','Opening','Ordered','Consumed','Closing SOH','Status']];
+  si.forEach(function(i){d.push([i.name,i.category,i.price_tier,i.supplier||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(i.current_soh||0),i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK']);});
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(d);
+  ws['!cols']=[{wch:42},{wch:18},{wch:16},{wch:18},{wch:10},{wch:10},{wch:10},{wch:12},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,r.data.report_label||mk);
+  XLSX.writeFile(wb,'PwC_Stocktake_'+mk+'.xlsx');
+  toast('📊 Exported to Excel');
+}
+
+
+
+// ── EDIT IN HISTORY ───────────────────────────────────────────
+async function editEvt(id){
+  var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary))').eq('id',id).single();
+  if(r.error){toast('Not found',true);return;}
+  var d=r.data;
+  var lines=d.event_lines||[];
+
+  var wrap=document.createElement('div');
+
+  var info=document.createElement('div');
+  info.style.cssText='margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--bdr)';
+  info.innerHTML='<b style="color:var(--wht)">'+d.event_name+'</b>'
+    +(d.event_date?' · '+d.event_date:'')+(d.event_type?' · '+d.event_type:'')
+    +(d.supervisor?' · Supervisor: '+d.supervisor:'');
+  wrap.appendChild(info);
+
+  var tip=document.createElement('div');
+  tip.style.cssText='background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#f39c12;margin-bottom:14px';
+  tip.innerHTML='Enter the <strong>closing count</strong> for each item. <b>Consumed = Opening − Closing</b> updates live.';
+  wrap.appendChild(tip);
+
+  var tbl=document.createElement('table');
+  tbl.style.cssText='width:100%;border-collapse:collapse;font-size:13px';
+  tbl.innerHTML='<thead><tr style="background:var(--sur2)">'
+    +'<th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Item</th>'
+    +'<th style="padding:9px 14px;text-align:center;font-size:11px;color:#5dade2;font-weight:700;text-transform:uppercase;background:rgba(41,128,185,.08)">Opening</th>'
+    +'<th style="padding:9px 14px;text-align:center;font-size:11px;color:#f39c12;font-weight:700;text-transform:uppercase;background:rgba(243,156,18,.08)">Closing</th>'
+    +'<th style="padding:9px 14px;text-align:center;font-size:11px;color:var(--acc);font-weight:700;text-transform:uppercase;background:rgba(233,69,96,.06)">Consumed</th>'
+    +'</tr></thead>';
+
+  var tbody=document.createElement('tbody');
+  lines.forEach(function(l){
+    var ic=l.items&&l.items.is_complimentary;
+    var opening=l.quantity||0;
+    var tr=document.createElement('tr');
+    tr.style.cssText='border-bottom:1px solid var(--bdr)'+(ic?';background:rgba(41,128,185,.04)':'');
+
+    var tdN=document.createElement('td');
+    tdN.style.cssText='padding:10px 14px;font-weight:500';
+    tdN.textContent=l.items?l.items.name:'—';
+    tr.appendChild(tdN);
+
+    var tdO=document.createElement('td');
+    tdO.style.cssText='padding:10px 14px;text-align:center;font-weight:700;font-size:16px;color:#5dade2;background:rgba(41,128,185,.06)';
+    tdO.textContent=opening;
+    tr.appendChild(tdO);
+
+    var tdC=document.createElement('td');
+    tdC.style.cssText='padding:8px 14px;text-align:center;background:rgba(243,156,18,.06)';
+    var inp=document.createElement('input');
+    inp.type='number'; inp.min='0'; inp.placeholder='0';
+    inp.id='ecl_'+l.id;
+    inp.dataset.opening=String(opening);
+    inp.dataset.dispid='ecd_'+l.id;
+    inp.style.cssText='width:70px;padding:6px 8px;border:1.5px solid rgba(243,156,18,.5);border-radius:6px;text-align:center;font-size:14px;font-weight:700;background:var(--sur2);color:var(--wht);font-family:inherit';
+    inp.addEventListener('input', function(){
+      var op=parseFloat(this.dataset.opening)||0;
+      var cl=parseFloat(this.value)||0;
+      var consumed=Math.max(0,op-cl);
+      var disp=document.getElementById(this.dataset.dispid);
+      if(disp){disp.textContent=consumed;disp.style.color=consumed>0?'var(--acc)':'var(--mut)';}
+    });
+    tdC.appendChild(inp);
+    tr.appendChild(tdC);
+
+    var tdCon=document.createElement('td');
+    tdCon.id='ecd_'+l.id;
+    tdCon.style.cssText='padding:10px 14px;text-align:center;font-weight:700;font-size:16px;color:var(--mut);background:rgba(233,69,96,.04)';
+    tdCon.textContent='—';
+    tr.appendChild(tdCon);
+
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  wrap.appendChild(tbl);
+
+  G('meventb').innerHTML='';
+  G('meventb').appendChild(wrap);
+
+  G('meventm').dataset.editLines=JSON.stringify(lines.map(function(l){
+    return{id:l.id,item_id:l.item_id,opening:l.quantity||0};
+  }));
+
+  G('meventmf').innerHTML='<button class="btn bo" onclick="closeMo(\'meventm\')">Cancel</button>'
+    +'<button class="btn bs" id="saveevtbtn">Save Closing &amp; Update Inventory</button>';
+  document.getElementById('saveevtbtn').addEventListener('click', saveEvtEdit);
+
+  openMo('meventm');
+}
+
+async function saveEvtEdit(){
+  var btn=document.getElementById('saveevtbtn');
+  var lines=JSON.parse(G('meventm').dataset.editLines||'[]');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    for(var i=0;i<lines.length;i++){
+      var l=lines[i];
+      var clEl=document.getElementById('ecl_'+l.id);
+      if(!clEl||clEl.value==='') continue; // skip if no closing entered
+      var closing=Math.max(0,parseInt(clEl.value)||0);
+      var consumed=Math.max(0,l.opening-closing);
+      // Update event_lines with actual consumed amount
+      await sb.from('event_lines').update({quantity:consumed}).eq('id',l.id);
+      // Update item consumed in inventory
+      var itm=items.find(function(x){return x.id===l.item_id;});
+      if(itm){
+        // The opening was stored as the initial quantity, now we set real consumed
+        // Previous consumed stored was the opening amount, replace with actual
+        var prevConsumed=parseFloat(itm.consumed)||0;
+        var newConsumed=Math.max(0, prevConsumed - l.opening + consumed);
+        await sb.from('items').update({consumed:newConsumed}).eq('id',l.item_id);
+      }
+    }
+    await fetchItems();
+    closeMo('meventm');
+    loadHist();
+    toast('✅ Closing counts saved — consumed updated');
+  }catch(ex){toast('Error: '+ex.message,true);}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Closing & Update Inventory';}}
+}
+
+async function editOrd(id){
+  var r=await sb.from('orders').select('*,order_lines(*,items(name,category))').eq('id',id).single();
+  if(r.error){toast('Not found',true);return;}
+  var d=r.data;
+  var rows=(d.order_lines||[]).map(function(l){
+    return '<tr style="border-bottom:1px solid var(--bdr)">'+
+      '<td style="padding:10px 14px;font-weight:500">'+(l.items?l.items.name:'—')+'</td>'+
+      '<td style="padding:10px 14px;text-align:center;color:var(--mut)">'+l.quantity+' units</td>'+
+      '<td style="padding:10px 14px;text-align:center">'+
+        '<input type="number" id="oq_'+l.id+'" value="'+l.quantity+'" min="0"'+
+        ' style="width:70px;padding:6px 8px;border:1.5px solid var(--bdr);border-radius:6px;text-align:center;font-size:14px;background:var(--sur2);color:var(--wht);font-family:inherit">'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+  var linesData=JSON.stringify((d.order_lines||[]).map(function(l){return{id:l.id,item_id:l.item_id,quantity:l.quantity};}));
+  G('mordb').innerHTML=
+    '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--bdr)">'+
+    '<b style="color:var(--wht)">'+d.order_date+'</b> · '+(d.ordered_by||'—')+'</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+    '<thead><tr style="background:var(--sur2)">'+
+      '<th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--mut);text-transform:uppercase">Item</th>'+
+      '<th style="padding:9px 14px;text-align:center;font-size:11px;color:var(--mut);text-transform:uppercase">Current Qty</th>'+
+      '<th style="padding:9px 14px;text-align:center;font-size:11px;color:#f39c12;text-transform:uppercase">Update To</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table>';
+  G('mordm').dataset.editLines=linesData;
+  G('mordmf').innerHTML=
+    '<button class="btn bo" onclick="closeMo(\'mordm\')">Cancel</button>'+
+    '<button class="btn bs" id="saveordbtn">💾 Save Changes</button>';
+  document.getElementById('saveordbtn').addEventListener('click', saveOrdEdit);
+  openMo('mordm');
+}
+
+async function saveOrdEdit(){
+  var btn=document.getElementById('saveordbtn');
+  var lines=JSON.parse(G('mordm').dataset.editLines||'[]');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    for(var i=0;i<lines.length;i++){
+      var l=lines[i];
+      var inp=document.getElementById('oq_'+l.id);
+      if(!inp) continue;
+      var newQty=Math.max(0,parseInt(inp.value)||0);
+      var diff=newQty-l.quantity;
+      await sb.from('order_lines').update({quantity:newQty}).eq('id',l.id);
+      if(diff!==0){
+        var itm=items.find(function(x){return x.id===l.item_id;});
+        if(itm){
+          var newO=Math.max(0,(parseFloat(itm.orders_in)||0)+diff);
+          await sb.from('items').update({orders_in:newO}).eq('id',l.item_id);
+        }
+      }
+    }
+    await fetchItems();
+    closeMo('mordm');
+    loadHist();
+    toast('✅ Order updated');
+  }catch(ex){toast('Error: '+ex.message,true);}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Changes';}}
+}
+
 
 // ── PRINT ─────────────────────────────────────────────────────
 function pw(title,body){
