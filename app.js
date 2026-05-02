@@ -39,11 +39,13 @@ document.getElementById('outbtn').addEventListener('click', function(){
 
 // Check if already logged in
 if(localStorage.getItem('pbev')===PWD){
-  document.getElementById('ls').classList.add('hide');
-  document.getElementById('sb').style.display='';
-  document.getElementById('mn').style.display='';
-  if(window.innerWidth<=800) document.getElementById('hbg').style.display='flex';
-  startApp();
+  document.addEventListener('DOMContentLoaded',function(){
+    document.getElementById('ls').classList.add('hide');
+    document.getElementById('sb').style.display='';
+    document.getElementById('mn').style.display='';
+    if(window.innerWidth<=800) document.getElementById('hbg').style.display='flex';
+    startApp();
+  });
 }
 
 // ── HAMBURGER ─────────────────────────────────────────────────
@@ -1136,13 +1138,7 @@ async function printCon(id){
     });
   });
 
-  html+='</tbody>'
-    +'<tfoot><tr style="background:#f0f0f0;font-weight:700">'
-    +'<td style="padding:8px 10px">TOTAL</td>'
-    +'<td class="num op">'+Math.round(totalOpen)+'</td>'
-    +(isClosed?'<td class="num cl">'+Math.round(totalClose)+'</td><td class="num con">'+Math.round(totalCon)+'</td>':'<td class="num"></td><td class="num"></td>')
-    +'</tr></tfoot>'
-    +'</table>'
+  html+='</tbody></table>';
     +(isClosed?'':'<p style="margin-top:16px;font-size:11px;color:#999;text-align:center">Closing counts not yet recorded. Print after closing the event for the full report.</p>');
 
   var w=window.open('','_blank','width=860,height=900');
@@ -1155,11 +1151,37 @@ async function printCon(id){
 async function printRep(mk){
   var r=await sb.from('monthly_reports').select('*').eq('report_month',mk).single();
   if(r.error){toast('Not found',true);return;}
-  var rep=r.data,sn=rep.snapshot||{},si=sn.items||[];
-  var html='<div class="sb"><div class="si"><strong>'+(sn.total_value?fmt(sn.total_value):'—')+'</strong>Portfolio Value</div><div class="si"><strong>'+(sn.item_count||0)+'</strong>Items</div><div class="si"><strong class="ok">'+(sn.in_stock||0)+'</strong>In Stock</div><div class="si"><strong class="ou">'+(sn.out_of_stock||0)+'</strong>Out</div><div class="si"><strong>'+(sn.order_count||0)+'</strong>Orders</div><div class="si"><strong>'+(sn.event_count||0)+'</strong>Events</div></div><table><thead><tr><th>Item</th><th>Category</th><th>Tier</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>Closing SOH</th><th>Status</th></tr></thead><tbody>';
-  si.forEach(function(i){var cl=i.current_soh<=0?'ou':i.current_soh<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+i.category+'</td><td>'+i.price_tier+'</td><td>'+(i.supplier||'—')+'</td><td>'+Math.round(i.opening_soh||0)+'</td><td>'+Math.round(i.orders_in||0)+'</td><td>'+Math.round(i.consumed||0)+'</td><td><strong>'+Math.round(i.current_soh||0)+'</strong></td><td class="'+cl+'">'+(i.current_soh<=0?'OUT':i.current_soh<=3?'LOW':'OK')+'</td></tr>';});
-  html+='</tbody></table>';
-  pw('Stocktake Report — '+(rep.report_label||mk),html);
+  var rep=r.data, sn=rep.snapshot||{}, si=sn.items||[];
+  var LAYOUT=[
+    {s:'LUXE',col:'#9a7a1f',t:'Luxe $65+',groups:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Red Wine',c:['Red']}]},
+    {s:'CLIENT',col:'#1a5276',t:'Client $30-65',groups:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Rose',c:['Rose']},{l:'Red Wine',c:['Red']}]},
+    {s:'STAFF',col:'#1e6b40',t:'Staff <$30',groups:[{l:'Sparkling',c:['Sparkling']},{l:'White Wine',c:['White']},{l:'Rose',c:['Rose']},{l:'Red Wine',c:['Red']},{l:'Dessert Wine',c:['Dessert Wine']}]},
+    {s:'NON-ALCOHOLIC',col:'#6c3483',t:'Non-Alc',groups:[{l:'Non-Alc Wine',c:['Non-Alc Wine']},{l:'Non-Alc Cocktails',c:['Non-Alc Cocktail']}]},
+    {s:'BEER',col:'#935116',t:null,groups:[{l:null,c:['Beer']}]},
+    {s:'SOFT DRINKS & WATER',col:'#154360',t:null,groups:[{l:'1.25L Bottles',c:['Soft Drink'],f:function(i){return i.name.toLowerCase().includes('1.25');}},{l:'330ml Cans',c:['Soft Drink'],f:function(i){return !i.name.toLowerCase().includes('1.25');}},{l:'Water',c:['Water']}]},
+    {s:'JUICES',col:'#1d6a35',t:null,groups:[{l:null,c:['Juice']}]},
+    {s:'SPIRITS & MIXERS',col:'#7b241c',t:null,groups:[{l:'Spirits',c:['Spirit']},{l:'Mixers',c:['Mixer']}]}
+  ];
+  var css='*{box-sizing:border-box}body{font-family:Calibri,Arial,sans-serif;font-size:12px;color:#111;margin:16px 24px}.hdr{display:flex;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #1a1d2e}.sec-hdr{color:#fff;padding:7px 14px;font-weight:800;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-top:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.grp-lbl{background:#ebebeb;padding:5px 12px;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#555;border-bottom:1px solid #ddd}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#1a1d2e;color:#fff;padding:6px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase}th.c{text-align:center;width:80px}td{padding:6px 12px;border-bottom:1px solid #eee}td.c{text-align:center;font-weight:700}tr:nth-child(even) td{background:#fafafa}.ok{color:#27ae60}.lo{color:#f39c12}.ou{color:#e94560}@media print{body{margin:8px 14px}}';
+  var inStock=si.filter(function(i){return i.current_soh>0;}).length;
+  var html='<div class="hdr"><div><b style="font-size:16px">PwC Sydney Beverage Portal</b><div style="margin-top:3px;font-size:12px;color:#555">'+(rep.report_label||mk)+'</div></div><div style="text-align:right;font-size:11px;color:#777">'+new Date(rep.generated_at).toLocaleString('en-AU')+'<br>'+inStock+' in stock / '+si.length+' items</div></div>';
+  var thead='<thead><tr><th>Item</th><th class="c">SOH</th><th class="c">Status</th></tr></thead>';
+  LAYOUT.forEach(function(sec){
+    var secBody='';
+    sec.groups.forEach(function(grp){
+      var gi=si.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;if(!grp.c.includes(i.category))return false;if(grp.f&&!grp.f(i))return false;return true;});
+      if(!gi.length) return;
+      if(grp.l) secBody+='<tr><td colspan="3" class="grp-lbl">'+grp.l+'</td></tr>';
+      gi.forEach(function(i){var s=Math.round(i.current_soh||0);var cl=s<=0?'ou':s<=3?'lo':'ok';secBody+='<tr><td>'+i.name+(i.vintage?' <span style="color:#999;font-size:10px">'+i.vintage+'</span>':'')+'</td><td class="c '+cl+'">'+s+'</td><td class="c '+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
+    });
+    if(!secBody) return;
+    html+='<div class="sec-hdr" style="background:'+sec.col+'">'+sec.s+(sec.t?' <span style="font-size:10px;font-weight:400;opacity:.75">'+sec.t+'</span>':'')+'</div><table>'+thead+'<tbody>'+secBody+'</tbody></table>';
+  });
+  var w=window.open('','_blank','width=900,height=800');
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html><head><title>Report</title><style>'+css+'</style></head><body>'+html+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},400);
 }
 
 // ── EXCEL ─────────────────────────────────────────────────────
@@ -1181,166 +1203,56 @@ async function exportRepXL(mk){
   var rep=r.data, sn=rep.snapshot||{}, si=sn.items||[];
 
   var LAYOUT=[
-    {s:'LUXE',t:'Luxe $65+',col:'FF9A7A1F',groups:[
-      {l:'Champagne & Sparkling',c:['Champagne','Sparkling']},
-      {l:'White Wine',c:['White']},
-      {l:'Red Wine',c:['Red']}
-    ]},
-    {s:'CLIENT',t:'Client $30-65',col:'FF1A5276',groups:[
-      {l:'Champagne & Sparkling',c:['Champagne','Sparkling']},
-      {l:'White Wine',c:['White']},
-      {l:'Rose',c:['Rose']},
-      {l:'Red Wine',c:['Red']}
-    ]},
-    {s:'STAFF',t:'Staff <$30',col:'FF1E6B40',groups:[
-      {l:'Sparkling',c:['Sparkling']},
-      {l:'White Wine',c:['White']},
-      {l:'Rose',c:['Rose']},
-      {l:'Red Wine',c:['Red']},
-      {l:'Dessert Wine',c:['Dessert Wine']}
-    ]},
-    {s:'NON-ALCOHOLIC',t:'Non-Alc',col:'FF6C3483',groups:[
-      {l:'Non-Alc Wine',c:['Non-Alc Wine']},
-      {l:'Non-Alc Cocktails',c:['Non-Alc Cocktail']}
-    ]},
-    {s:'BEER',t:null,col:'FF935116',groups:[{l:null,c:['Beer']}]},
-    {s:'SOFT DRINKS & WATER',t:null,col:'FF154360',groups:[
+    {s:'LUXE',t:'Luxe $65+',groups:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Red Wine',c:['Red']}]},
+    {s:'CLIENT',t:'Client $30-65',groups:[{l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Rose',c:['Rose']},{l:'Red Wine',c:['Red']}]},
+    {s:'STAFF',t:'Staff <$30',groups:[{l:'Sparkling',c:['Sparkling']},{l:'White Wine',c:['White']},{l:'Rose',c:['Rose']},{l:'Red Wine',c:['Red']},{l:'Dessert Wine',c:['Dessert Wine']}]},
+    {s:'NON-ALCOHOLIC',t:'Non-Alc',groups:[{l:'Non-Alc Wine',c:['Non-Alc Wine']},{l:'Non-Alc Cocktails',c:['Non-Alc Cocktail']}]},
+    {s:'BEER',t:null,groups:[{l:null,c:['Beer']}]},
+    {s:'SOFT DRINKS & WATER',t:null,groups:[
       {l:'1.25L Bottles',c:['Soft Drink'],f:function(i){return i.name.toLowerCase().includes('1.25');}},
       {l:'330ml Cans',c:['Soft Drink'],f:function(i){return !i.name.toLowerCase().includes('1.25');}},
       {l:'Water',c:['Water']}
     ]},
-    {s:'JUICES',t:null,col:'FF1D6A35',groups:[{l:null,c:['Juice']}]},
-    {s:'SPIRITS & MIXERS',t:null,col:'FF7B241C',groups:[
-      {l:'Spirits',c:['Spirit']},
-      {l:'Mixers',c:['Mixer']}
-    ]}
+    {s:'JUICES',t:null,groups:[{l:null,c:['Juice']}]},
+    {s:'SPIRITS & MIXERS',t:null,groups:[{l:'Spirits',c:['Spirit']},{l:'Mixers',c:['Mixer']}]}
   ];
 
-  var wb=XLSX.utils.book_new();
-  var rows=[];
-  var merges=[];
-  var rowStyles=[];  // track what style each row needs
-
-  // Title rows
-  rows.push(['PwC Sydney Beverage Portal — Stocktake Report']);
-  rowStyles.push('title');
-  rows.push([rep.report_label||mk, '', '', '', '', '', '', '', '']);
-  rowStyles.push('subtitle');
-  rows.push(['Generated: '+new Date(rep.generated_at).toLocaleString('en-AU'), '', '', '', 'Items: '+si.length, '', 'In Stock: '+si.filter(function(i){return i.current_soh>0;}).length, 'Out: '+si.filter(function(i){return i.current_soh<=0;}).length, '']);
-  rowStyles.push('meta');
-  rows.push([]);
-  rowStyles.push('blank');
-
-  // Column headers
-  rows.push(['Item','Vintage','Supplier','Opening','Ordered','Consumed','Closing SOH','Status','']);
-  rowStyles.push('header');
+  var rows=[
+    ['PwC Sydney Beverage Portal — '+(rep.report_label||mk)],
+    ['Generated: '+new Date(rep.generated_at).toLocaleString('en-AU'),'','In Stock: '+si.filter(function(i){return i.current_soh>0;}).length+' / '+si.length+' items'],
+    [],
+    ['Item','Vintage','SOH','Status']
+  ];
 
   LAYOUT.forEach(function(sec){
-    var secHasContent=false;
-    var secStartRow=rows.length;
-    var secRowData=[];
-
+    var secRows=[];
     sec.groups.forEach(function(grp){
       var gi=si.filter(function(i){
-        if(sec.t && i.price_tier!==sec.t) return false;
+        if(sec.t&&i.price_tier!==sec.t) return false;
         if(!grp.c.includes(i.category)) return false;
-        if(grp.f && !grp.f(i)) return false;
+        if(grp.f&&!grp.f(i)) return false;
         return true;
       });
       if(!gi.length) return;
-      secHasContent=true;
-
-      if(grp.l){
-        secRowData.push({type:'grp', data:[grp.l,'','','','','','','',''], col:sec.col});
-      }
+      if(grp.l) secRows.push(['  '+grp.l,'','','']);
       gi.forEach(function(i){
         var s=Math.round(i.current_soh||0);
-        secRowData.push({type:'item', data:[
-          i.name,
-          i.vintage||'',
-          i.supplier||'',
-          Math.round(i.opening_soh||0),
-          Math.round(i.orders_in||0),
-          Math.round(i.consumed||0),
-          s,
-          s<=0?'OUT':s<=3?'LOW':'OK',
-          ''
-        ], status: s<=0?'out':s<=3?'low':'ok'});
+        secRows.push([i.name, i.vintage||'', s, s<=0?'OUT':s<=3?'LOW':'OK']);
       });
     });
-
-    if(!secHasContent) return;
-
-    // Section header row
-    rows.push([sec.s+(sec.t?' — '+sec.t:''),'','','','','','','','']);
-    rowStyles.push({type:'sec', col:sec.col});
-
-    secRowData.forEach(function(rd){
-      rows.push(rd.data);
-      rowStyles.push(rd.type==='grp'?'grp':{type:'item', status:rd.status});
-    });
+    if(!secRows.length) return;
     rows.push([]);
-    rowStyles.push('blank');
+    rows.push(['=== '+sec.s+(sec.t?' — '+sec.t:'')+'  ===','','','']);
+    secRows.forEach(function(row){rows.push(row);});
   });
 
+  var wb=XLSX.utils.book_new();
   var ws=XLSX.utils.aoa_to_sheet(rows);
-
-  // Column widths
-  ws['!cols']=[{wch:42},{wch:10},{wch:18},{wch:10},{wch:10},{wch:10},{wch:12},{wch:8},{wch:4}];
-
-  // Apply styles
-  var range=XLSX.utils.decode_range(ws['!ref']||'A1:I1');
-  var COLS=['A','B','C','D','E','F','G','H','I'];
-
-  rows.forEach(function(row, ri){
-    var style=rowStyles[ri];
-    var isObj=typeof style==='object';
-    var styleType=isObj?style.type:style;
-
-    COLS.forEach(function(col, ci){
-      var cell_ref=col+(ri+1);
-      if(!ws[cell_ref]) ws[cell_ref]={t:'z',v:''};
-      var c=ws[cell_ref];
-
-      if(styleType==='title'){
-        c.s={font:{bold:true,sz:16,color:{rgb:'1A1D2E'}},alignment:{horizontal:'left'}};
-      } else if(styleType==='subtitle'){
-        c.s={font:{bold:true,sz:12,color:{rgb:'444444'}}};
-      } else if(styleType==='header'){
-        c.s={font:{bold:true,sz:10,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1A1D2E'}},alignment:{horizontal:'center'},border:{bottom:{style:'medium',color:{rgb:'000000'}}}};
-        if(ci===0) c.s.alignment={horizontal:'left'};
-      } else if(styleType==='sec'){
-        c.s={font:{bold:true,sz:11,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:(isObj?style.col:'FF1A1D2E').replace('FF','')}}};
-      } else if(styleType==='grp'){
-        c.s={font:{bold:true,sz:10,color:{rgb:'333333'}},fill:{fgColor:{rgb:'E8E8E8'}}};
-      } else if(styleType==='meta'){
-        c.s={font:{sz:9,color:{rgb:'666666'}}};
-      } else if(isObj && styleType==='item'){
-        var fillColor=ci%2===0?'FFFFFF':'FAFAFA';
-        var fontColor='111111';
-        if(ci===7){ // Status column
-          if(style.status==='out') fontColor='C0392B';
-          else if(style.status==='low') fontColor='F39C12';
-          else fontColor='27AE60';
-        }
-        if(ci===6 && style.status!=='ok'){ // SOH column when low/out
-          fontColor=style.status==='out'?'C0392B':'F39C12';
-        }
-        c.s={font:{sz:10,color:{rgb:fontColor},bold:(ci===6)},fill:{fgColor:{rgb:fillColor}},alignment:{horizontal:ci>2?'center':'left'}};
-      }
-    });
-  });
-
-  // Merge title rows across columns
-  if(!ws['!merges']) ws['!merges']=[];
-  ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:7}}); // Title
-  ws['!merges'].push({s:{r:1,c:0},e:{r:1,c:3}}); // Subtitle
-
-  XLSX.utils.book_append_sheet(wb,ws,rep.report_label||mk);
-  XLSX.writeFile(wb,'PwC_Stocktake_'+mk+'.xlsx');
-  toast('✅ Excel exported');
+  ws['!cols']=[{wch:44},{wch:10},{wch:8},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,(rep.report_label||mk).substring(0,31));
+  XLSX.writeFile(wb,'PwC_Report_'+mk+'.xlsx');
+  toast('Excel exported');
 }
-
 
 
 
