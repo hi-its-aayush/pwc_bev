@@ -64,7 +64,7 @@ var items=[], settings={members:[]}, pending=null, activeSup=null, activeCCat=nu
 
 function G(id){ return document.getElementById(id); }
 function fmt(n){ return isNaN(n)?'$0.00':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
-function fmtN(n){ return Math.max(0,Math.round(Number(n)||0)).toString(); }
+function fmtN(n){ var v=Math.max(0,Number(n)||0); return v===Math.round(v)?Math.round(v).toString():parseFloat(v.toFixed(2)).toString(); }
 function td(){ return new Date().toISOString().split('T')[0]; }
 function soh(i){ return (parseFloat(i.opening_soh)||0)+(parseFloat(i.orders_in)||0)-(parseFloat(i.consumed)||0); }
 
@@ -146,6 +146,15 @@ var SEED=[
 
 function supFor(n){ var l=(n||'').toLowerCase(); if(l.includes('noah'))return'Noah Juices'; if(l.includes('young henry'))return"Young Henry's"; return'Sydney Wines'; }
 function ctn(i){ var n=(i.name||'').toLowerCase(),c=i.category; if(c==='Beer')return{q:24,l:'24 cans/carton'}; if(c==='Soft Drink')return n.includes('1.25')?{q:12,l:'12x1.25L/carton'}:{q:24,l:'24x330ml/carton'}; if(c==='Water')return(n.includes('750')||n.includes('500'))?{q:12,l:'12 bottles/carton'}:{q:24,l:'24x300ml/carton'}; if(c==='Juice')return{q:12,l:'12 bottles/carton'}; if(c==='Non-Alc Cocktail')return{q:24,l:'24 cans/carton'}; if(c==='Spirit'||c==='Mixer')return{q:1,l:'per bottle'}; return{q:12,l:'12 bottles/carton'}; }
+
+// Order unit: wines & spirits ordered per BOTTLE; everything else per CARTON
+function ordMode(i){
+  var c=i.category;
+  var byBottle=['Champagne','Sparkling','White','Rose','Red','Dessert Wine','Non-Alc Wine','Spirit','Mixer'];
+  if(byBottle.indexOf(c)>=0) return {mult:1, unit:'Btl', label:'per bottle', perBottle:true};
+  var cs=ctn(i);
+  return {mult:cs.q, unit:'carton', label:cs.l, perBottle:false};
+}
 
 async function seedItems(){
   try{
@@ -256,7 +265,7 @@ function renderInv(){
 function openEdit(id){
   var i=items.find(function(x){return x.id===id;}); if(!i)return;
   G('eitn').textContent=i.name; G('eid').value=id;
-  G('eop').value=Math.round(i.opening_soh||0); G('ecur').value=Math.round(soh(i));
+  G('eop').value=parseFloat((i.opening_soh||0).toFixed(2)); G('ecur').value=parseFloat(soh(i).toFixed(2));
   G('esupf').value=i.supplier||''; G('eluc').value=i.luc;
   openMo('medit');
 }
@@ -312,11 +321,11 @@ function renderOItems(){
   var html=srt.map(function(g){
     var gi=grps[g];
     var rows=gi.map(function(i){
-      var s=soh(i),cs=ctn(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)';
+      var s=soh(i),om=ordMode(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)';
       var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
       var td_name='<td style="padding:10px 14px;font-weight:500">'+i.name+vt+'</td>';
-      var td_soh='<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td>';
-      var td_ctn='<td style="padding:10px 14px;font-size:11px;color:var(--mut);text-align:center">'+cs.l+'</td>';
+      var td_soh='<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>';
+      var td_ctn='<td style="padding:10px 14px;font-size:11px;color:var(--mut);text-align:center">'+om.label+'</td>';
       var td_qty='<td style="padding:8px 14px;text-align:center;background:rgba(243,156,18,.04)">'
         +'<div style="display:flex;align-items:center;gap:5px;justify-content:center">'
         +'<button type="button" onclick="adjOQ('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--wht);font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1">&#8722;</button>'
@@ -334,8 +343,8 @@ function renderOItems(){
       +'<thead><tr style="background:rgba(255,255,255,.02)">'
       +'<th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th>'
       +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th>'
-      +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Carton</th>'
-      +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">QTY</th>'
+      +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Order Unit</th>'
+      +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty (Btl/Carton)</th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
   G('ogrps').innerHTML=html;
@@ -347,7 +356,7 @@ function updateOTotal(){
   var tot=0;
   items.forEach(function(i){
     var el=document.getElementById('qo'+i.id); if(!el)return;
-    var c=parseFloat(el.value)||0,line=c*ctn(i).q*i.luc; tot+=line;
+    var c=parseFloat(el.value)||0,line=c*ordMode(i).mult*i.luc; tot+=line;
     
     if(c>0) el.style.borderColor='#f39c12';
   });
@@ -359,7 +368,7 @@ G('subord').addEventListener('click', function(){
   if(!date||!by){toast('Please enter order date and your name',true);return;}
   if(!activeSup){toast('No supplier selected',true);return;}
   var lines=[];
-  items.forEach(function(i){var el=document.getElementById('qo'+i.id);if(!el)return;var c=parseFloat(el.value)||0;if(c>0)lines.push({item:i,cartons:c,units:c*ctn(i).q});});
+  items.forEach(function(i){var el=document.getElementById('qo'+i.id);if(!el)return;var c=parseFloat(el.value)||0;if(c>0){var om=ordMode(i);lines.push({item:i,cartons:c,units:c*om.mult,unit:om.unit,perBottle:om.perBottle});}});
   if(!lines.length){toast('No quantities entered',true);return;}
   pending={date:date,by:by,notes:notes,lines:lines,sup:activeSup};
   showEmailPreview();
@@ -375,7 +384,7 @@ function showEmailPreview(){
   body+='\n';
   Object.keys(grouped).forEach(function(cat){
     body+=cat+':\n';
-    grouped[cat].forEach(function(l){body+='  '+l.cartons+' x carton'+(l.cartons!==1?'s':'')+' — '+l.item.name+' ('+l.units+' units)\n';});
+    grouped[cat].forEach(function(l){ if(l.perBottle){ body+='  '+l.cartons+' x Btl — '+l.item.name+'\n'; } else { body+='  '+l.cartons+' x carton'+(l.cartons!==1?'s':'')+' — '+l.item.name+' ('+l.units+' units)\n'; } });
     body+='\n';
   });
   var sub=pending.lines.reduce(function(s,l){return s+l.units*l.item.luc;},0);
@@ -815,13 +824,13 @@ function renderStocktake(){
       if(!gi.length)return;
       if(grp.l) sb+='<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--bdr);background:rgba(255,255,255,.015)">— '+grp.l+' —</div>';
       var rows=gi.map(function(i){
-        var s=Math.max(0,Math.round(soh(i)));
+        var s=Math.max(0,soh(i));
         var vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';
         return'<tr style="border-bottom:1px solid var(--bdr)">'+
           '<td style="padding:10px 16px;font-weight:500;width:55%">'+i.name+vt+'</td>'+
-          '<td style="padding:10px 16px;text-align:center;color:var(--mut);font-size:13px">'+s+'</td>'+
+          '<td style="padding:10px 16px;text-align:center;color:var(--mut);font-size:13px">'+fmtN(s)+'</td>'+
           '<td style="padding:10px 16px;text-align:center;background:rgba(39,174,96,.04)">'+
-            '<input type="number" id="st'+i.id+'" min="0" step="1" placeholder="—" '+
+            '<input type="number" id="st'+i.id+'" min="0" step="0.01" placeholder="—" '+
             'style="width:80px;background:var(--sur);border:1.5px solid var(--bdr);color:var(--wht);border-radius:6px;padding:7px 10px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" '+
             'oninput="updateStProg()">'+
           '</td>'+
@@ -919,8 +928,9 @@ async function openCloseEvt(id){
   var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary))').eq('id',id).single();
   if(r.error){toast('Not found',true);return;}
   var d=r.data, lines=d.event_lines||[];
+  var evtClosed=(d.status==='closed');
 
-  G('mclosetitle').textContent=d.event_name+' · '+d.event_date+(d.event_time?' '+d.event_time:'')+(d.supervisor?' · '+d.supervisor:'');
+  G('mclosetitle').textContent=(d.status==='closed'?'✏️ Edit · ':'')+d.event_name+' · '+d.event_date+(d.event_time?' '+d.event_time:'')+(d.supervisor?' · '+d.supervisor:'');
 
   // Build table: Item | Opening | Closing input | Consumed (live)
   var CAT_ORDER=['Champagne','Sparkling','White','Rose','Red','Dessert Wine','Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink','Water','Juice','Spirit','Mixer'];
@@ -951,28 +961,46 @@ async function openCloseEvt(id){
     tdN.innerHTML=(l.items?l.items.name:'—')+(ic?'<div style="font-size:10px;color:#5dade2">✓ Comp</div>':'');
     tr.appendChild(tdN);
 
-    // Opening qty
+    // Opening qty (editable)
     var tdO=document.createElement('td');
-    tdO.style.cssText='padding:10px 14px;text-align:center;font-weight:700;font-size:16px;color:#5dade2;background:rgba(41,128,185,.06)';
-    tdO.textContent=Math.round(opening);
+    tdO.style.cssText='padding:8px 14px;text-align:center;background:rgba(41,128,185,.06)';
+    var opInp=document.createElement('input');
+    opInp.type='number'; opInp.min='0'; opInp.step='0.01';
+    opInp.id='op_'+l.id;
+    opInp.value=parseFloat(opening.toFixed(2));
+    opInp.dataset.lineid=String(l.id);
+    opInp.dataset.itemid=String(l.item_id);
+    opInp.style.cssText='width:70px;padding:6px 8px;border:1.5px solid rgba(41,128,185,.5);border-radius:6px;text-align:center;font-size:14px;font-weight:700;background:var(--sur2);color:#5dade2;font-family:inherit';
+    opInp.addEventListener('input',function(){
+      var op=parseFloat(this.value)||0;
+      var clEl=document.getElementById('cl_'+this.dataset.lineid);
+      if(clEl){ clEl.dataset.opening=String(op); clEl.max=String(op); }
+      var cl=clEl?parseFloat(clEl.value):NaN;
+      var consumed=isNaN(cl)?op:Math.max(0,op-cl);
+      var disp=document.getElementById('cd_'+this.dataset.lineid);
+      if(disp){disp.textContent=fmtN(consumed);}
+    });
+    tdO.appendChild(opInp);
     tr.appendChild(tdO);
 
     // Closing input
     var tdC=document.createElement('td');
     tdC.style.cssText='padding:8px 14px;text-align:center;background:rgba(243,156,18,.06)';
     var inp=document.createElement('input');
-    inp.type='number'; inp.min='0'; inp.max=String(opening); inp.placeholder='0';
+    inp.type='number'; inp.min='0'; inp.step='0.01'; inp.max=String(opening); inp.placeholder='0';
     inp.id='cl_'+l.id;
     inp.dataset.opening=String(opening);
     inp.dataset.lineid=String(l.id);
     inp.dataset.itemid=String(l.item_id);
+    inp.dataset.prevapplied=String(evtClosed?parseFloat(l.consumed_qty||0):opening);
+    if(evtClosed && l.closing_qty!==null && l.closing_qty!==undefined) inp.value=parseFloat(l.closing_qty);
     inp.style.cssText='width:70px;padding:6px 8px;border:1.5px solid rgba(243,156,18,.5);border-radius:6px;text-align:center;font-size:14px;font-weight:700;background:var(--sur2);color:var(--wht);font-family:inherit';
     inp.addEventListener('input',function(){
       var op=parseFloat(this.dataset.opening)||0;
       var cl=parseFloat(this.value);
       var consumed=isNaN(cl)?op:Math.max(0,op-cl);
       var disp=document.getElementById('cd_'+this.dataset.lineid);
-      if(disp){disp.textContent=Math.round(consumed);disp.style.color=consumed>0?'var(--acc)':'var(--mut)';}
+      if(disp){disp.textContent=fmtN(consumed);disp.style.color=consumed>0?'var(--acc)':'var(--mut)';}
     });
     tdC.appendChild(inp);
     tr.appendChild(tdC);
@@ -981,7 +1009,7 @@ async function openCloseEvt(id){
     var tdCon=document.createElement('td');
     tdCon.id='cd_'+l.id;
     tdCon.style.cssText='padding:10px 14px;text-align:center;font-weight:700;font-size:16px;color:var(--mut);background:rgba(233,69,96,.04)';
-    tdCon.textContent=Math.round(opening); // default: assume all consumed
+    tdCon.textContent=fmtN(evtClosed?parseFloat(l.consumed_qty||0):opening);
     tr.appendChild(tdCon);
 
     tbody.appendChild(tr);
@@ -1001,27 +1029,33 @@ async function saveCloseEvt(){
   var btn=document.getElementById('saveclosebtn');
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
   try{
-    var inputs=G('mclosebody').querySelectorAll('input[type="number"]');
+    // Iterate over the CLOSING inputs (one per line)
+    var inputs=G('mclosebody').querySelectorAll('input[id^="cl_"]');
     for(var i=0;i<inputs.length;i++){
       var inp=inputs[i];
       var lineId=parseInt(inp.dataset.lineid);
       var itemId=parseInt(inp.dataset.itemid);
-      var opening=parseFloat(inp.dataset.opening)||0;
+
+      // Read possibly-edited opening from the opening input
+      var opEl=document.getElementById('op_'+lineId);
+      var newOpening=opEl?Math.max(0,parseFloat(opEl.value)||0):(parseFloat(inp.dataset.opening)||0);
+      var oldOpening=parseFloat(inp.dataset.opening)||0;
+
       var closing=inp.value===''?0:Math.max(0,parseFloat(inp.value)||0);
-      var consumed=Math.max(0,opening-closing);
+      var consumed=Math.max(0,newOpening-closing);
 
-      // Update event_line with closing + consumed
-      await sb.from('event_lines').update({closing_qty:closing,consumed_qty:consumed,quantity:consumed}).eq('id',lineId);
+      // Update event_line with new opening + closing + consumed
+      await sb.from('event_lines').update({opening_qty:newOpening,closing_qty:closing,consumed_qty:consumed,quantity:consumed}).eq('id',lineId);
 
-      // Correct inventory: opening qty was already deducted when event opened.
-      // Now we know the real consumed; add back anything not consumed (returned stock).
+      // Inventory correction.
+      // On event creation, `oldOpening` was added to items.consumed (stock taken out).
+      // Final actual consumed = consumed. Also if opening was edited, the extra/less
+      // bottles taken out must be reflected. Net change to consumed = consumed - oldOpening.
+      var prevApplied=parseFloat(inp.dataset.prevapplied)||0;
       var itm=items.find(function(x){return x.id===itemId;});
       if(itm){
-        // We deducted `opening` from consumed on event creation.
-        // Actual consumed = consumed; difference = opening - consumed = closing (returned).
-        // Correct consumed in DB: remove the over-deduction
         var prevConsumed=parseFloat(itm.consumed)||0;
-        var corrected=Math.max(0,prevConsumed-(opening-consumed)); // remove the returned portion
+        var corrected=Math.max(0, prevConsumed - prevApplied + consumed);
         await sb.from('items').update({consumed:corrected}).eq('id',itemId);
       }
     }
