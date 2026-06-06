@@ -350,7 +350,7 @@ function renderOItems(){
   G('ogrps').innerHTML=html;
 }
 
-function adjOQ(id,d){var el=document.getElementById('qo'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);updateOTotal();}
+function adjOQ(id,d){var el=document.getElementById('qo'+id);if(!el)return;el.value=Math.max(0,Math.round(((parseFloat(el.value)||0)+d)*100)/100);updateOTotal();}
 
 function updateOTotal(){
   var tot=0;
@@ -830,7 +830,7 @@ function renderStocktake(){
           '<td style="padding:10px 16px;font-weight:500;width:55%">'+i.name+vt+'</td>'+
           '<td style="padding:10px 16px;text-align:center;color:var(--mut);font-size:13px">'+fmtN(s)+'</td>'+
           '<td style="padding:10px 16px;text-align:center;background:rgba(39,174,96,.04)">'+
-            '<input type="number" id="st'+i.id+'" min="0" step="0.01" placeholder="—" '+
+            '<input type="number" id="st'+i.id+'" min="0" step="any" placeholder="—" '+
             'style="width:80px;background:var(--sur);border:1.5px solid var(--bdr);color:var(--wht);border-radius:6px;padding:7px 10px;font-size:14px;font-weight:700;text-align:center;font-family:inherit" '+
             'oninput="updateStProg()">'+
           '</td>'+
@@ -864,7 +864,7 @@ async function saveStocktake(){
   items.forEach(function(i){
     var el=document.getElementById('st'+i.id);
     if(el&&el.value!==''){
-      var count=parseInt(el.value);
+      var count=parseFloat(el.value);
       if(!isNaN(count)&&count>=0) entries.push({item:i,count:count});
     }
   });
@@ -1387,7 +1387,7 @@ async function saveOrdEdit(){
 (function(){
   var CSS='.stepper{display:inline-flex;align-items:center;gap:6px;justify-content:center}.stepper-btn{background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--wht);font-size:16px;font-weight:700;cursor:pointer;line-height:1;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:background .12s,border-color .12s}.stepper-btn:hover{background:var(--bdr);border-color:var(--acc)}.stepper-btn:active{transform:scale(.94)}';
   var s=document.createElement('style');s.textContent=CSS;document.head.appendChild(s);
-  function bump(inp,d){var step=parseFloat(inp.step)||1,min=inp.min!==''?parseFloat(inp.min):-Infinity,max=inp.max!==''?parseFloat(inp.max):Infinity,cur=parseFloat(inp.value)||0,next=Math.min(max,Math.max(min,cur+d*step));inp.value=(step%1===0)?String(Math.round(next)):String(next);inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}
+  function bump(inp,d){var min=inp.min!==''?parseFloat(inp.min):-Infinity,max=inp.max!==''?parseFloat(inp.max):Infinity,cur=parseFloat(inp.value)||0,next=Math.min(max,Math.max(min,cur+d));next=Math.round(next*100)/100;inp.value=(next%1===0)?String(Math.round(next)):String(next);inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}
   function isStepBtn(el){if(!el||el.tagName!=='BUTTON')return false;var t=(el.textContent||'').trim();return t==='−'||t==='-'||t==='+';}
   function wrap(inp){
     if(inp.dataset.stepperized)return;
