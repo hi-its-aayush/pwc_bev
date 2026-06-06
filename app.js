@@ -65,6 +65,7 @@ var items=[], settings={members:[]}, pending=null, activeSup=null, activeCCat=nu
 function G(id){ return document.getElementById(id); }
 function fmt(n){ return isNaN(n)?'$0.00':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
 function fmtN(n){ var v=Math.max(0,Number(n)||0); return v===Math.round(v)?Math.round(v).toString():parseFloat(v.toFixed(2)).toString(); }
+function fmtNraw(n){ var v=Math.max(0,Number(n)||0); return v===Math.round(v)?Math.round(v):parseFloat(v.toFixed(2)); }
 function td(){ return new Date().toISOString().split('T')[0]; }
 function soh(i){ return (parseFloat(i.opening_soh)||0)+(parseFloat(i.orders_in)||0)-(parseFloat(i.consumed)||0); }
 
@@ -219,7 +220,7 @@ function renderInv(){
     var vt=i.vintage?'<span style="font-size:11px;color:var(--mut);margin-left:6px">'+i.vintage+'</span>':'';
     return '<tr style="border-bottom:1px solid var(--bdr);cursor:pointer" onclick="openEdit('+i.id+')" title="Click to edit SOH">'
       +'<td style="padding:10px 16px;font-weight:500;color:var(--acc)">'+i.name+vt+'</td>'
-      +'<td style="padding:10px 16px;text-align:center;font-weight:700;font-size:15px;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td>'
+      +'<td style="padding:10px 16px;text-align:center;font-weight:700;font-size:15px;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>'
       +'<td style="padding:10px 16px;text-align:center">'+sbadge(i)+'</td>'
       +'</tr>';
   }
@@ -272,9 +273,16 @@ function openEdit(id){
 
 G('saveedit').addEventListener('click', async function(){
   var id=parseInt(G('eid').value),i=items.find(function(x){return x.id===id;});
-  var op=parseFloat(G('eop').value)||0,cu=parseFloat(G('ecur').value)||0;
-  var con=Math.max(0,(op+(i.orders_in||0))-cu);
-  var r=await sb.from('items').update({opening_soh:op,consumed:con,supplier:G('esupf').value,luc:parseFloat(G('eluc').value)||0}).eq('id',id);
+  var op=parseFloat(G('eop').value)||0, cu=parseFloat(G('ecur').value)||0;
+  // Current SOH (override) is the source of truth for stock on hand.
+  // Set opening to the override and zero orders/consumed so soh() === override exactly.
+  var update={supplier:G('esupf').value, luc:parseFloat(G('eluc').value)||0};
+  if(G('ecur').value!==''){
+    update.opening_soh=cu; update.orders_in=0; update.consumed=0;
+  } else {
+    update.opening_soh=op;
+  }
+  var r=await sb.from('items').update(update).eq('id',id);
   if(r.error){toast('Error: '+r.error.message,true);return;}
   await fetchItems(); renderInv(); closeMo('medit'); toast('✅ Item updated');
 });
@@ -350,7 +358,7 @@ function renderOItems(){
   G('ogrps').innerHTML=html;
 }
 
-function adjOQ(id,d){var el=document.getElementById('qo'+id);if(!el)return;el.value=Math.max(0,Math.round(((parseFloat(el.value)||0)+d)*100)/100);updateOTotal();}
+function adjOQ(id,d){var el=document.getElementById('qo'+id);if(!el)return;el.value=Math.max(0,(parseFloat(el.value)||0)+d);updateOTotal();}
 
 function updateOTotal(){
   var tot=0;
@@ -487,7 +495,7 @@ function renderAllCats(){
             '<div style="font-weight:500">'+i.name+vt+'</div>'+
             (ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+
           '</td>'+
-          '<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+Math.max(0,Math.round(s))+'</td>'+
+          '<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>'+
           '<td style="padding:10px 14px;text-align:center;background:rgba(41,128,185,.06)">'+
             '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'+
               '<button type="button" onclick="adjOp('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:32px;height:32px;color:var(--wht);font-size:18px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit;flex-shrink:0">−</button>'+
@@ -665,6 +673,7 @@ async function loadHist(){
         +'<td>'+cnt+' item'+(cnt!==1?'s':'')+'</td>'
         +'<td style="display:flex;gap:6px;justify-content:flex-end">'
           +'<button class="btn bo bsm" onclick="viewEvt('+e.id+')">View</button>'
+          +'<button class="btn bo bsm" onclick="openCloseEvt('+e.id+')">✏️ Edit</button>'
           +'<button class="btn bo bsm" onclick="printCon('+e.id+')">🖨️ Print</button>'
         +'</td>'
         +'</tr>';
@@ -697,9 +706,9 @@ async function viewEvt(id){
     ?'<th style="padding:8px;text-align:center">Opening</th><th style="padding:8px;text-align:center">Closing</th><th style="padding:8px;text-align:center;color:var(--acc)">Consumed</th>'
     :'<th style="padding:8px;text-align:center;color:#5dade2">Opening Count</th>';
   var rows=(d.event_lines||[]).map(function(l){
-    var op=Math.round(parseFloat(l.opening_qty||l.quantity||0));
+    var op=fmtNraw(parseFloat(l.opening_qty||l.quantity||0));
     var cl=l.closing_qty!=null?Math.round(parseFloat(l.closing_qty)):'—';
-    var con=l.consumed_qty!=null?Math.round(parseFloat(l.consumed_qty)):op;
+    var con=l.consumed_qty!=null?fmtNraw(parseFloat(l.consumed_qty)):op;
     var ic=l.items&&l.items.is_complimentary;
     if(isClosed){
       return'<tr style="border-bottom:1px solid var(--bdr)'+(ic?';color:#5dade2':'')+'"><td style="padding:8px">'+(l.items?l.items.name:'—')+(ic?' <em style="font-size:10px">(Comp)</em>':'')+'</td>'
@@ -930,7 +939,7 @@ async function openCloseEvt(id){
   var d=r.data, lines=d.event_lines||[];
   var evtClosed=(d.status==='closed');
 
-  G('mclosetitle').textContent=(d.status==='closed'?'✏️ Edit · ':'')+d.event_name+' · '+d.event_date+(d.event_time?' '+d.event_time:'')+(d.supervisor?' · '+d.supervisor:'');
+  G('mclosetitle').textContent=(evtClosed?'✏️ Edit · ':'')+d.event_name+' · '+d.event_date+(d.event_time?' '+d.event_time:'')+(d.supervisor?' · '+d.supervisor:'');
 
   // Build table: Item | Opening | Closing input | Consumed (live)
   var CAT_ORDER=['Champagne','Sparkling','White','Rose','Red','Dessert Wine','Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink','Water','Juice','Spirit','Mixer'];
@@ -965,11 +974,10 @@ async function openCloseEvt(id){
     var tdO=document.createElement('td');
     tdO.style.cssText='padding:8px 14px;text-align:center;background:rgba(41,128,185,.06)';
     var opInp=document.createElement('input');
-    opInp.type='number'; opInp.min='0'; opInp.step='0.01';
+    opInp.type='number'; opInp.min='0'; opInp.step='any';
     opInp.id='op_'+l.id;
-    opInp.value=parseFloat(opening.toFixed(2));
+    opInp.value=fmtNraw(opening);
     opInp.dataset.lineid=String(l.id);
-    opInp.dataset.itemid=String(l.item_id);
     opInp.style.cssText='width:70px;padding:6px 8px;border:1.5px solid rgba(41,128,185,.5);border-radius:6px;text-align:center;font-size:14px;font-weight:700;background:var(--sur2);color:#5dade2;font-family:inherit';
     opInp.addEventListener('input',function(){
       var op=parseFloat(this.value)||0;
@@ -978,7 +986,7 @@ async function openCloseEvt(id){
       var cl=clEl?parseFloat(clEl.value):NaN;
       var consumed=isNaN(cl)?op:Math.max(0,op-cl);
       var disp=document.getElementById('cd_'+this.dataset.lineid);
-      if(disp){disp.textContent=fmtN(consumed);}
+      if(disp){disp.textContent=fmtNraw(consumed);}
     });
     tdO.appendChild(opInp);
     tr.appendChild(tdO);
@@ -987,7 +995,7 @@ async function openCloseEvt(id){
     var tdC=document.createElement('td');
     tdC.style.cssText='padding:8px 14px;text-align:center;background:rgba(243,156,18,.06)';
     var inp=document.createElement('input');
-    inp.type='number'; inp.min='0'; inp.step='0.01'; inp.max=String(opening); inp.placeholder='0';
+    inp.type='number'; inp.min='0'; inp.step='any'; inp.max=String(opening); inp.placeholder='0';
     inp.id='cl_'+l.id;
     inp.dataset.opening=String(opening);
     inp.dataset.lineid=String(l.id);
@@ -1000,7 +1008,7 @@ async function openCloseEvt(id){
       var cl=parseFloat(this.value);
       var consumed=isNaN(cl)?op:Math.max(0,op-cl);
       var disp=document.getElementById('cd_'+this.dataset.lineid);
-      if(disp){disp.textContent=fmtN(consumed);disp.style.color=consumed>0?'var(--acc)':'var(--mut)';}
+      if(disp){disp.textContent=fmtNraw(consumed);disp.style.color=consumed>0?'var(--acc)':'var(--mut)';}
     });
     tdC.appendChild(inp);
     tr.appendChild(tdC);
@@ -1009,7 +1017,7 @@ async function openCloseEvt(id){
     var tdCon=document.createElement('td');
     tdCon.id='cd_'+l.id;
     tdCon.style.cssText='padding:10px 14px;text-align:center;font-weight:700;font-size:16px;color:var(--mut);background:rgba(233,69,96,.04)';
-    tdCon.textContent=fmtN(evtClosed?parseFloat(l.consumed_qty||0):opening);
+    tdCon.textContent=fmtNraw(evtClosed?parseFloat(l.consumed_qty||0):opening);
     tr.appendChild(tdCon);
 
     tbody.appendChild(tr);
@@ -1029,28 +1037,27 @@ async function saveCloseEvt(){
   var btn=document.getElementById('saveclosebtn');
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
   try{
-    // Iterate over the CLOSING inputs (one per line)
+    // Iterate the CLOSING inputs (one per line)
     var inputs=G('mclosebody').querySelectorAll('input[id^="cl_"]');
     for(var i=0;i<inputs.length;i++){
       var inp=inputs[i];
       var lineId=parseInt(inp.dataset.lineid);
       var itemId=parseInt(inp.dataset.itemid);
 
-      // Read possibly-edited opening from the opening input
+      // Read possibly-edited opening
       var opEl=document.getElementById('op_'+lineId);
       var newOpening=opEl?Math.max(0,parseFloat(opEl.value)||0):(parseFloat(inp.dataset.opening)||0);
-      var oldOpening=parseFloat(inp.dataset.opening)||0;
 
       var closing=inp.value===''?0:Math.max(0,parseFloat(inp.value)||0);
       var consumed=Math.max(0,newOpening-closing);
 
-      // Update event_line with new opening + closing + consumed
+      // Save new opening + closing + consumed on the line
       await sb.from('event_lines').update({opening_qty:newOpening,closing_qty:closing,consumed_qty:consumed,quantity:consumed}).eq('id',lineId);
 
-      // Inventory correction.
-      // On event creation, `oldOpening` was added to items.consumed (stock taken out).
-      // Final actual consumed = consumed. Also if opening was edited, the extra/less
-      // bottles taken out must be reflected. Net change to consumed = consumed - oldOpening.
+      // Inventory correction using a per-line baseline:
+      //  - For an OPEN event being closed first time, prevApplied = opening (provisionally deducted on creation)
+      //  - For a CLOSED event being re-edited, prevApplied = previously stored consumed_qty
+      // Net change to items.consumed = consumed - prevApplied
       var prevApplied=parseFloat(inp.dataset.prevapplied)||0;
       var itm=items.find(function(x){return x.id===itemId;});
       if(itm){
@@ -1091,7 +1098,7 @@ function printInv(){
     var si=items.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;return sec.c.includes(i.category);});
     if(!si.length)return;
     html+='<div class="sh">'+sec.l+(sec.t?' — '+sec.t:'')+'</div><table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>SOH</th><th>Status</th></tr></thead><tbody>';
-    si.forEach(function(i){var s=Math.max(0,soh(i)),cl=s<=0?'ou':s<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+(i.vintage||'')+'</td><td>'+(i._sup||'')+'</td><td>'+Math.round(i.opening_soh||0)+'</td><td>'+Math.round(i.orders_in||0)+'</td><td>'+Math.round(i.consumed||0)+'</td><td><strong>'+Math.round(s)+'</strong></td><td class="'+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
+    si.forEach(function(i){var s=Math.max(0,soh(i)),cl=s<=0?'ou':s<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+(i.vintage||'')+'</td><td>'+(i._sup||'')+'</td><td>'+fmtNraw(i.opening_soh||0)+'</td><td>'+fmtNraw(i.orders_in||0)+'</td><td>'+fmtNraw(i.consumed||0)+'</td><td><strong>'+fmtNraw(s)+'</strong></td><td class="'+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
     html+='</tbody></table>';
   });
   pw('Inventory — '+new Date().toLocaleDateString('en-AU'),html);
@@ -1159,9 +1166,9 @@ async function printCon(id){
       html+='<tr><td colspan="'+colspan+'" class="cat">'+label+'</td></tr>';
     }
     lines.forEach(function(l){
-      var op=Math.round(parseFloat(l.opening_qty||l.quantity||0));
+      var op=fmtNraw(parseFloat(l.opening_qty||l.quantity||0));
       var cl=l.closing_qty!=null?Math.round(parseFloat(l.closing_qty)):'';
-      var con=l.consumed_qty!=null?Math.round(parseFloat(l.consumed_qty)):(isClosed?op:'');
+      var con=l.consumed_qty!=null?fmtNraw(parseFloat(l.consumed_qty)):(isClosed?op:'');
       var ic=l.items&&l.items.is_complimentary;
       html+='<tr>'
         +'<td>'+(l.items?l.items.name:'—')+(ic?' <span class="comp">(Comp)</span>':'')+'</td>'
@@ -1206,7 +1213,7 @@ async function printRep(mk){
       var gi=si.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;if(!grp.c.includes(i.category))return false;if(grp.f&&!grp.f(i))return false;return true;});
       if(!gi.length) return;
       if(grp.l) secBody+='<tr><td colspan="3" class="grp-lbl">'+grp.l+'</td></tr>';
-      gi.forEach(function(i){var s=Math.round(i.current_soh||0);var cl=s<=0?'ou':s<=3?'lo':'ok';secBody+='<tr><td>'+i.name+(i.vintage?' <span style="color:#999;font-size:10px">'+i.vintage+'</span>':'')+'</td><td class="c '+cl+'">'+s+'</td><td class="c '+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
+      gi.forEach(function(i){var s=fmtNraw(i.current_soh||0);var cl=s<=0?'ou':s<=3?'lo':'ok';secBody+='<tr><td>'+i.name+(i.vintage?' <span style="color:#999;font-size:10px">'+i.vintage+'</span>':'')+'</td><td class="c '+cl+'">'+s+'</td><td class="c '+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
     });
     if(!secBody) return;
     html+='<div class="sec-hdr" style="background:'+sec.col+'">'+sec.s+(sec.t?' <span style="font-size:10px;font-weight:400;opacity:.75">'+sec.t+'</span>':'')+'</div><table>'+thead+'<tbody>'+secBody+'</tbody></table>';
@@ -1222,7 +1229,7 @@ async function printRep(mk){
 function exportInvXL(){
   if(typeof XLSX==='undefined'){toast('Excel loading, try again',true);return;}
   var d=[['Item','Category','Price Tier','Supplier','Vintage','Opening','Ordered','Consumed','SOH','Status']];
-  items.forEach(function(i){var s=Math.max(0,soh(i));d.push([i.name,i.category,i.price_tier,i._sup||i.supplier||'',i.vintage||'',Math.round(i.opening_soh||0),Math.round(i.orders_in||0),Math.round(i.consumed||0),Math.round(s),s<=0?'OUT':s<=3?'LOW':'OK']);});
+  items.forEach(function(i){var s=Math.max(0,soh(i));d.push([i.name,i.category,i.price_tier,i._sup||i.supplier||'',i.vintage||'',fmtNraw(i.opening_soh||0),fmtNraw(i.orders_in||0),fmtNraw(i.consumed||0),fmtNraw(s),s<=0?'OUT':s<=3?'LOW':'OK']);});
   var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(d);
   ws['!cols']=[{wch:40},{wch:16},{wch:16},{wch:18},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8}];
   XLSX.utils.book_append_sheet(wb,ws,'Inventory');
@@ -1270,7 +1277,7 @@ async function exportRepXL(mk){
       if(!gi.length) return;
       if(grp.l) secRows.push(['  '+grp.l,'','','']);
       gi.forEach(function(i){
-        var s=Math.round(i.current_soh||0);
+        var s=fmtNraw(i.current_soh||0);
         secRows.push([i.name, i.vintage||'', s, s<=0?'OUT':s<=3?'LOW':'OK']);
       });
     });
@@ -1363,7 +1370,7 @@ async function saveOrdEdit(){
       var l=lines[i];
       var inp=document.getElementById('oq_'+l.id);
       if(!inp)continue;
-      var newQty=Math.max(0,parseInt(inp.value)||0);
+      var newQty=Math.max(0,parseFloat(inp.value)||0);
       var diff=newQty-l.quantity;
       await sb.from('order_lines').update({quantity:newQty}).eq('id',l.id);
       if(diff!==0){
@@ -1382,12 +1389,108 @@ async function saveOrdEdit(){
   finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Changes';}}
 }
 
+// ── MANAGE ITEMS ──────────────────────────────────────────────
+function openManageItems(){showManageList();openMo('mmanage');}
+
+function showManageList(){
+  G('mtitle2').textContent='Manage Items';
+  var wrap=document.createElement('div');
+  wrap.style.cssText='overflow-y:auto;max-height:440px';
+  var tbl=document.createElement('table');
+  tbl.style.cssText='width:100%;border-collapse:collapse;font-size:13px';
+  tbl.innerHTML='<thead><tr style="background:var(--sur2)"><th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--mut);text-transform:uppercase">Item</th><th style="padding:8px 12px;font-size:11px;color:var(--mut);text-transform:uppercase">Category</th><th style="padding:8px 12px;font-size:11px;color:var(--mut);text-transform:uppercase">Tier</th><th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--mut);text-transform:uppercase">SOH</th><th></th></tr></thead>';
+  var tbody=document.createElement('tbody');
+  items.forEach(function(i){
+    var tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid var(--bdr)';
+    ['name','category','price_tier'].forEach(function(k,ci){
+      var td=document.createElement('td');
+      td.style.cssText='padding:8px 12px'+(ci===0?';font-weight:500':';color:var(--mut)');
+      td.textContent=i[k]||'';
+      tr.appendChild(td);
+    });
+    var tdS=document.createElement('td'); tdS.style.cssText='padding:8px 12px;text-align:center;font-weight:700'; tdS.textContent=fmtN(Math.max(0,soh(i))); tr.appendChild(tdS);
+    var tdA=document.createElement('td'); tdA.style.cssText='padding:8px 12px;text-align:right;white-space:nowrap';
+    var bE=document.createElement('button'); bE.className='btn bo bsm'; bE.textContent='Edit';
+    bE.addEventListener('click',(function(id){return function(){showEditItem(id);};})(i.id));
+    var bR=document.createElement('button'); bR.className='btn bo bsm'; bR.textContent='Remove'; bR.style.cssText='color:var(--acc);border-color:rgba(233,69,96,.3);margin-left:6px';
+    bR.addEventListener('click',(function(id,nm){return function(){confirmRemoveItem(id,nm);};})(i.id,i.name));
+    tdA.appendChild(bE); tdA.appendChild(bR); tr.appendChild(tdA);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); wrap.appendChild(tbl);
+  G('mbody2').innerHTML=''; G('mbody2').appendChild(wrap);
+  var addBtn=document.createElement('button'); addBtn.className='btn bs'; addBtn.textContent='+ Add New Item'; addBtn.onclick=showAddItem;
+  var closeBtn=document.createElement('button'); closeBtn.className='btn bo'; closeBtn.textContent='Close'; closeBtn.onclick=function(){closeMo('mmanage');};
+  G('mfoot2').innerHTML=''; G('mfoot2').appendChild(addBtn); G('mfoot2').appendChild(closeBtn);
+}
+
+function buildItemForm(i,container){
+  var CATS=['Champagne','Sparkling','White','Rose','Red','Dessert Wine','Non-Alc Wine','Non-Alc Cocktail','Beer','Soft Drink','Water','Juice','Spirit','Mixer'];
+  var TIERS=['Luxe $65+','Client $30-65','Staff <$30','Non-Alc','Complimentary','Beer/Spirits'];
+  var SUPS=['Sydney Wines','Noah Juices',"Young Henry's"];
+  var grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:14px';
+  function fg(label,el,full){var d=document.createElement('div');if(full)d.style.gridColumn='1/-1';var l=document.createElement('label');l.style.cssText='font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px';l.textContent=label;d.appendChild(l);d.appendChild(el);grid.appendChild(d);}
+  function inp(id,val,ph,type){var e=document.createElement('input');e.type=type||'text';e.id=id;e.value=val!==undefined&&val!==null?val:'';e.placeholder=ph||'';if(type==='number'){e.step='any';e.min='0';}e.style.cssText='width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none';return e;}
+  function sel(id,opts,val){var e=document.createElement('select');e.id=id;e.style.cssText='width:100%;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit';opts.forEach(function(o){var op=document.createElement('option');op.value=o;op.textContent=o;if(o===val)op.selected=true;e.appendChild(op);});return e;}
+  fg('Item Name',inp('if-name',i.name,'e.g. Veuve Cliquot Brut NV'),true);
+  fg('Vintage / Style',inp('if-vintage',i.vintage,'e.g. 2022, NV, Pale Ale'));
+  fg('Category',sel('if-cat',CATS,i.category));
+  fg('Price Tier',sel('if-tier',TIERS,i.price_tier));
+  fg('Supplier',sel('if-sup',SUPS,i.supplier||i._sup));
+  fg('LUC (ex GST) $',inp('if-luc',i.luc,'0.00','number'));
+  fg('Current SOH',inp('if-soh',i.opening_soh||0,'0','number'));
+  container.innerHTML=''; container.appendChild(grid);
+}
+
+function showAddItem(){
+  G('mtitle2').textContent='Add New Item';
+  buildItemForm({},G('mbody2'));
+  var bBack=document.createElement('button'); bBack.className='btn bo'; bBack.textContent='Back'; bBack.onclick=showManageList;
+  var bSave=document.createElement('button'); bSave.className='btn bs'; bSave.textContent='Add Item'; bSave.onclick=saveNewItem;
+  G('mfoot2').innerHTML=''; G('mfoot2').appendChild(bBack); G('mfoot2').appendChild(bSave);
+}
+
+function showEditItem(id){
+  var i=items.find(function(x){return x.id===id;}); if(!i) return;
+  G('mtitle2').textContent='Edit Item';
+  buildItemForm(i,G('mbody2'));
+  var hid=document.createElement('input'); hid.type='hidden'; hid.id='edit-item-id'; hid.value=id; G('mbody2').appendChild(hid);
+  var bBack=document.createElement('button'); bBack.className='btn bo'; bBack.textContent='Back'; bBack.onclick=showManageList;
+  var bSave=document.createElement('button'); bSave.className='btn bs'; bSave.textContent='Save Changes'; bSave.onclick=saveEditItem;
+  G('mfoot2').innerHTML=''; G('mfoot2').appendChild(bBack); G('mfoot2').appendChild(bSave);
+}
+
+async function saveNewItem(){
+  var name=G('if-name').value.trim();
+  if(!name){toast('Item name is required',true);return;}
+  var r=await sb.from('items').insert({name:name,vintage:G('if-vintage').value.trim(),category:G('if-cat').value,price_tier:G('if-tier').value,supplier:G('if-sup').value,luc:parseFloat(G('if-luc').value)||0,opening_soh:parseFloat(G('if-soh').value)||0,orders_in:0,consumed:0,is_complimentary:false});
+  if(r.error){toast('Error: '+r.error.message,true);return;}
+  await fetchItems(); renderInv(); toast('Item added'); showManageList();
+}
+
+async function saveEditItem(){
+  var id=parseInt(G('edit-item-id').value);
+  var name=G('if-name').value.trim();
+  if(!name){toast('Item name is required',true);return;}
+  var r=await sb.from('items').update({name:name,vintage:G('if-vintage').value.trim(),category:G('if-cat').value,price_tier:G('if-tier').value,supplier:G('if-sup').value,luc:parseFloat(G('if-luc').value)||0,opening_soh:parseFloat(G('if-soh').value)||0}).eq('id',id);
+  if(r.error){toast('Error: '+r.error.message,true);return;}
+  await fetchItems(); renderInv(); toast('Item updated'); showManageList();
+}
+
+async function confirmRemoveItem(id,name){
+  if(!confirm('Remove "'+name+'" permanently from inventory?')) return;
+  var r=await sb.from('items').delete().eq('id',id);
+  if(r.error){toast('Error: '+r.error.message,true);return;}
+  await fetchItems(); renderInv(); toast(name+' removed'); showManageList();
+}
+
 // ── STEPPER ENHANCEMENT ───────────────────────────────────────
 // Auto-wraps every number input with − / + buttons
 (function(){
   var CSS='.stepper{display:inline-flex;align-items:center;gap:6px;justify-content:center}.stepper-btn{background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:28px;height:28px;color:var(--wht);font-size:16px;font-weight:700;cursor:pointer;line-height:1;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:background .12s,border-color .12s}.stepper-btn:hover{background:var(--bdr);border-color:var(--acc)}.stepper-btn:active{transform:scale(.94)}';
   var s=document.createElement('style');s.textContent=CSS;document.head.appendChild(s);
-  function bump(inp,d){var min=inp.min!==''?parseFloat(inp.min):-Infinity,max=inp.max!==''?parseFloat(inp.max):Infinity,cur=parseFloat(inp.value)||0,next=Math.min(max,Math.max(min,cur+d));next=Math.round(next*100)/100;inp.value=(next%1===0)?String(Math.round(next)):String(next);inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}
+  function bump(inp,d){var step=parseFloat(inp.step)||1,min=inp.min!==''?parseFloat(inp.min):-Infinity,max=inp.max!==''?parseFloat(inp.max):Infinity,cur=parseFloat(inp.value)||0,next=Math.min(max,Math.max(min,cur+d*step));inp.value=(step%1===0)?String(Math.round(next)):String(next);inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}
   function isStepBtn(el){if(!el||el.tagName!=='BUTTON')return false;var t=(el.textContent||'').trim();return t==='−'||t==='-'||t==='+';}
   function wrap(inp){
     if(inp.dataset.stepperized)return;

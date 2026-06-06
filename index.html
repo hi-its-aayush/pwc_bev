@@ -71,6 +71,7 @@
       <select id="istat" onchange="renderInv()" style="background:var(--sur);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:8px 12px;font-size:13px;outline:none">
         <option value="">All Status</option><option value="ok">In Stock</option><option value="low">Low Stock</option><option value="out">Out of Stock</option>
       </select>
+      <button class="btn bo bsm" onclick="openManageItems()">✏️ Manage Items</button>
       <button class="btn bs bsm" onclick="startStocktake()">📋 Start New Stocktake</button>
       <button class="btn bo bsm" onclick="fetchItems().then(renderInv)">🔄 Refresh</button>
     </div>
@@ -252,7 +253,7 @@
 <div class="mo" id="medit"><div class="md">
   <div class="mh"><h4>Edit Stock — <span id="eitn"></span></h4><button class="mc" onclick="closeMo('medit')">✕</button></div>
   <div class="mb">
-    <div class="fr"><div class="fg"><label>Opening SOH</label><input type="number" id="eop" step="1" min="0"></div><div class="fg"><label>Current SOH (override)</label><input type="number" id="ecur" step="1" min="0"></div></div>
+    <div class="fr"><div class="fg"><label>Opening SOH</label><input type="number" id="eop" step="any" min="0"></div><div class="fg"><label>Current SOH (override)</label><input type="number" id="ecur" step="any" min="0"></div></div>
     <div class="fr"><div class="fg"><label>Supplier</label><input type="text" id="esupf"></div><div class="fg"><label>LUC (ex GST) $</label><input type="number" id="eluc" step="0.01" min="0"></div></div>
     <input type="hidden" id="eid">
   </div>
@@ -285,6 +286,7 @@
   </div>
 </div></div>
 
+<div class="mo" id="mmanage"><div class="md" style="max-width:780px"><div class="mh"><h4 id="mtitle2">Manage Items</h4><button class="mc" onclick="closeMo('mmanage')">&#x2715;</button></div><div class="mb" id="mbody2"></div><div class="mf" id="mfoot2"></div></div></div>
 <div id="toast"></div>
 <script src="app.js"></script>
 </body>
