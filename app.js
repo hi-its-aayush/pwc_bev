@@ -352,7 +352,7 @@ function renderOItems(){
       +'<th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th>'
       +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">SOH</th>'
       +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut)">Order Unit</th>'
-      +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty (Btl/Carton)</th>'
+      +'<th style="padding:7px 14px;text-align:center;font-size:10px;color:#f39c12;background:rgba(243,156,18,.06)">Qty</th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
   G('ogrps').innerHTML=html;
