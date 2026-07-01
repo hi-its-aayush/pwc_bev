@@ -436,7 +436,33 @@ var CCATS=[
   ['🍺 Beer',['Beer']],['🥤 Soft Drinks',['Soft Drink','Water']],['🧃 Juices',['Juice']],['🥃 Spirits & Mixers',['Spirit','Mixer']]
 ];
 
-function loadCon(){ G('edate').value=td(); conCounts={}; showCS1(); }
+// ── CONSUMPTION TEMPLATES ─────────────────────────────────────
+// Matched by name substring so vintage changes don't break them.
+var TEMPLATES={
+  staff:{name:'Staff Drinks',match:['croser brut','brokenwood pinot gris','brokenwood pinot noir','james squire shackles','young henry newtowner','coopers light']},
+  client:{name:'Client Drinks',match:['veuve cliquot','veuve clicquot','stonier reserve chardonnay','stonier reserve pinot noir','james squire shackles','young henry newtowner','coopers light']}
+};
+var activeTemplate=null;
+
+function isTemplateItem(i){
+  if(!activeTemplate) return false;
+  var n=i.name.toLowerCase();
+  return TEMPLATES[activeTemplate].match.some(function(m){return n.includes(m);});
+}
+
+function applyTemplate(key){
+  if(!valEvt()) return;
+  activeTemplate=key;
+  goCS2();
+  toast('Template applied: '+TEMPLATES[key].name+' — items highlighted in gold');
+}
+
+function clearTemplate(){
+  activeTemplate=null;
+  renderAllCats();
+}
+
+function loadCon(){ G('edate').value=td(); conCounts={}; activeTemplate=null; showCS1(); }
 function showCS1(){ G('cs1').style.display='block'; G('cs2').style.display='none'; renderShorts(); }
 
 function renderShorts(){
@@ -490,9 +516,10 @@ function renderAllCats(){
         var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary;
         var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
         var curVal=conCounts[i.id]||0;
-        return '<tr style="border-bottom:1px solid var(--bdr);'+(ic?'background:rgba(41,128,185,.04)':'')+'">'+
+        var isTpl=isTemplateItem(i);
+        return '<tr style="border-bottom:1px solid var(--bdr);'+(isTpl?'background:rgba(243,156,18,.07);box-shadow:inset 3px 0 0 #f39c12;':(ic?'background:rgba(41,128,185,.04)':''))+'">'+
           '<td style="padding:10px 14px">'+
-            '<div style="font-weight:500">'+i.name+vt+'</div>'+
+            '<div style="font-weight:500">'+i.name+vt+(isTpl?' <span style="background:rgba(243,156,18,.18);color:#f39c12;font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:10px;vertical-align:middle;text-transform:uppercase">Template</span>':'')+'</div>'+
             (ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+
           '</td>'+
           '<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>'+
@@ -525,7 +552,14 @@ function renderAllCats(){
       '<tbody>'+subHtml+'</tbody></table></div>';
   });
 
-  G('ctabs').innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:4px">'+jumpHtml+'</div>';
+  var tplBanner='';
+  if(activeTemplate){
+    tplBanner='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:9px 14px;margin-bottom:10px;font-size:12px;color:#f39c12">'
+      +'<span>📋 <strong>'+TEMPLATES[activeTemplate].name+'</strong> template — standard items highlighted in gold. Enter quantities; add any other drinks as needed.</span>'
+      +'<button onclick="clearTemplate()" style="background:none;border:1px solid rgba(243,156,18,.4);border-radius:6px;color:#f39c12;font-size:11px;padding:4px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Clear</button>'
+      +'</div>';
+  }
+  G('ctabs').innerHTML=tplBanner+'<div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:4px">'+jumpHtml+'</div>';
   G('cgrp').innerHTML=bodyHtml;
   updateCSummary();
 }
