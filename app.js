@@ -442,7 +442,10 @@ var TEMPLATES={
   staff:{name:'Staff Drinks',match:['croser brut','brokenwood pinot gris','brokenwood pinot noir','james squire shackles','young henry newtowner','coopers light']},
   client:{name:'Client Drinks',match:['veuve cliquot','veuve clicquot','stonier reserve chardonnay','stonier reserve pinot noir','james squire shackles','young henry newtowner','coopers light']}
 };
-var activeTemplate=null;
+var activeTemplate=null, showAllDrinks=false;
+
+// Package Type -> template mapping (Luxe has no fixed allocation, shows all)
+var PKG_TEMPLATE={'Staff':'staff','Client':'client'};
 
 function isTemplateItem(i){
   if(!activeTemplate) return false;
@@ -450,19 +453,12 @@ function isTemplateItem(i){
   return TEMPLATES[activeTemplate].match.some(function(m){return n.includes(m);});
 }
 
-function applyTemplate(key){
-  if(!valEvt()) return;
-  activeTemplate=key;
-  goCS2();
-  toast('Template applied: '+TEMPLATES[key].name+' — items highlighted in gold');
-}
-
-function clearTemplate(){
-  activeTemplate=null;
+function toggleAllDrinks(){
+  showAllDrinks=!showAllDrinks;
   renderAllCats();
 }
 
-function loadCon(){ G('edate').value=td(); conCounts={}; activeTemplate=null; showCS1(); }
+function loadCon(){ G('edate').value=td(); conCounts={}; activeTemplate=null; showAllDrinks=false; showCS1(); }
 function showCS1(){ G('cs1').style.display='block'; G('cs2').style.display='none'; renderShorts(); }
 
 function renderShorts(){
@@ -477,6 +473,8 @@ G('cnext').addEventListener('click',function(){if(!valEvt())return;goCS2(CCATS[0
 function jumpCat(idx){if(!valEvt())return;goCS2(CCATS[idx][0]);}
 
 function goCS2(){
+  activeTemplate=PKG_TEMPLATE[G('etype').value]||null;
+  showAllDrinks=false;
   G('cs1').style.display='none'; G('cs2').style.display='block';
   G('cbadget').textContent=G('ename').value;
   var pts=[G('edate').value,G('etime').value,G('eroom').value,G('epax').value?G('epax').value+' pax':'',G('etype').value,G('esup').value];
@@ -486,6 +484,67 @@ function goCS2(){
 
 // Render ALL categories at once in one scrollable page — no tabs, no state loss
 function renderAllCats(){
+  var tplMode = activeTemplate && !showAllDrinks;
+
+  // Row builder shared by both views
+  function rowHtml(i){
+    var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary;
+    var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
+    var curVal=conCounts[i.id]||0;
+    var isTpl=isTemplateItem(i);
+    return '<tr style="border-bottom:1px solid var(--bdr);'+(isTpl?'background:rgba(243,156,18,.07);box-shadow:inset 3px 0 0 #f39c12;':(ic?'background:rgba(41,128,185,.04)':''))+'">'+
+      '<td style="padding:10px 14px">'+
+        '<div style="font-weight:500">'+i.name+vt+(isTpl?' <span style="background:rgba(243,156,18,.18);color:#f39c12;font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:10px;vertical-align:middle;text-transform:uppercase">Template</span>':'')+'</div>'+
+        (ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+
+      '</td>'+
+      '<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>'+
+      '<td style="padding:10px 14px;text-align:center;background:rgba(41,128,185,.06)">'+
+        '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'+
+          '<button type="button" onclick="adjOp('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:32px;height:32px;color:var(--wht);font-size:18px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit;flex-shrink:0">−</button>'+
+          '<input type="number" id="qop_'+i.id+'" min="0" step="1" placeholder="0"'+
+          (curVal>0?' value="'+curVal+'"':'')+
+          ' style="width:60px;background:var(--sur);border:1.5px solid '+(curVal>0?'var(--grn)':(ic?'rgba(41,128,185,.5)':'var(--bdr)'))+';color:'+(curVal>0?'var(--wht)':'var(--txt)')+';border-radius:6px;padding:5px 6px;font-size:15px;font-weight:700;text-align:center;font-family:inherit"'+
+          ' oninput="onOpInput('+i.id+')">'+
+          '<button type="button" onclick="adjOp('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:32px;height:32px;color:var(--wht);font-size:18px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit;flex-shrink:0">+</button>'+
+        '</div>'+
+      '</td>'+
+    '</tr>';
+  }
+
+  var thead='<thead><tr style="background:rgba(255,255,255,.02)">'+
+    '<th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th>'+
+    '<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut);width:60px">SOH</th>'+
+    '<th style="padding:7px 14px;text-align:center;font-size:10px;color:#5dade2;background:rgba(41,128,185,.06)">Opening Count</th>'+
+    '</tr></thead>';
+
+  var tplBanner='';
+  if(activeTemplate){
+    tplBanner='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:9px 14px;margin-bottom:10px;font-size:12px;color:#f39c12">'
+      +'<span>📋 <strong>'+TEMPLATES[activeTemplate].name+'</strong> template ('+G('etype').value+' package)'+(tplMode?' — showing standard allocation only.':' — all drinks shown, template items in gold.')+'</span>'
+      +'<button onclick="toggleAllDrinks()" style="background:none;border:1px solid rgba(243,156,18,.4);border-radius:6px;color:#f39c12;font-size:11px;padding:4px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">'+(tplMode?'▾ Show all drinks':'▴ Template items only')+'</button>'
+      +'</div>';
+  }
+
+  if(tplMode){
+    // ── Template-only view: one gold table with just the standard allocation ──
+    var ti=sortByPopularity(items.filter(isTemplateItem));
+    var body='<div style="border-radius:10px;overflow:hidden;border:1px solid rgba(243,156,18,.4)">'+
+      '<div style="background:rgba(243,156,18,.12);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(243,156,18,.3)">'+
+        '<span style="font-weight:700;font-size:13px;color:#f39c12">📋 '+TEMPLATES[activeTemplate].name+' — Standard Allocation</span>'+
+        '<span style="font-size:11px;color:var(--mut)">'+ti.length+' items</span>'+
+      '</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">'+thead+
+      '<tbody>'+ti.map(rowHtml).join('')+'</tbody></table></div>'+
+      '<div style="text-align:center;margin-top:14px">'+
+      '<button onclick="toggleAllDrinks()" class="btn bo">▾ Need something else? Show all drinks</button>'+
+      '</div>';
+    G('ctabs').innerHTML=tplBanner;
+    G('cgrp').innerHTML=body;
+    updateCSummary();
+    return;
+  }
+
+  // ── Full view (no template, or expanded) ──
   var jumpHtml='';
   var bodyHtml='';
 
@@ -494,7 +553,6 @@ function renderAllCats(){
     var ci=sortByPopularity(items.filter(function(i){return cats.includes(i.category);}));
     if(!ci.length) return;
 
-    // Sub-group within category (e.g. Soft Drink 1.25L vs 330ml)
     var subs={};
     ci.forEach(function(i){
       var s=i.category;
@@ -512,29 +570,7 @@ function renderAllCats(){
     var subHtml=Object.keys(subs).map(function(sub){
       var si=subs[sub];
       var multiSub=Object.keys(subs).length>1;
-      var rows=si.map(function(i){
-        var s=soh(i),sc=s<=0?'var(--acc)':s<=3?'#f39c12':'var(--wht)',ic=i.is_complimentary;
-        var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
-        var curVal=conCounts[i.id]||0;
-        var isTpl=isTemplateItem(i);
-        return '<tr style="border-bottom:1px solid var(--bdr);'+(isTpl?'background:rgba(243,156,18,.07);box-shadow:inset 3px 0 0 #f39c12;':(ic?'background:rgba(41,128,185,.04)':''))+'">'+
-          '<td style="padding:10px 14px">'+
-            '<div style="font-weight:500">'+i.name+vt+(isTpl?' <span style="background:rgba(243,156,18,.18);color:#f39c12;font-size:9px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:10px;vertical-align:middle;text-transform:uppercase">Template</span>':'')+'</div>'+
-            (ic?'<div style="font-size:10px;color:#5dade2;margin-top:2px">✓ Complimentary</div>':'')+
-          '</td>'+
-          '<td style="padding:10px 14px;text-align:center;font-weight:700;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>'+
-          '<td style="padding:10px 14px;text-align:center;background:rgba(41,128,185,.06)">'+
-            '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'+
-              '<button type="button" onclick="adjOp('+i.id+',-1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:32px;height:32px;color:var(--wht);font-size:18px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit;flex-shrink:0">−</button>'+
-              '<input type="number" id="qop_'+i.id+'" min="0" step="1" placeholder="0"'+
-              (curVal>0?' value="'+curVal+'"':'')+
-              ' style="width:60px;background:var(--sur);border:1.5px solid '+(curVal>0?'var(--grn)':(ic?'rgba(41,128,185,.5)':'var(--bdr)'))+';color:'+(curVal>0?'var(--wht)':'var(--txt)')+';border-radius:6px;padding:5px 6px;font-size:15px;font-weight:700;text-align:center;font-family:inherit"'+
-              ' oninput="onOpInput('+i.id+')">'+
-              '<button type="button" onclick="adjOp('+i.id+',1)" style="background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;width:32px;height:32px;color:var(--wht);font-size:18px;cursor:pointer;font-weight:700;line-height:1;font-family:inherit;flex-shrink:0">+</button>'+
-            '</div>'+
-          '</td>'+
-        '</tr>';
-      }).join('');
+      var rows=si.map(rowHtml).join('');
       return (multiSub?'<tr style="background:var(--sur2)"><td colspan="3" style="padding:6px 14px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px">'+sub+'</td></tr>':'')+rows;
     }).join('');
 
@@ -543,22 +579,10 @@ function renderAllCats(){
         '<span style="font-weight:700;font-size:13px;color:var(--wht)">'+cat[0]+'</span>'+
         '<span id="cbadge_'+idx+'" style="font-size:11px;color:var(--mut)"></span>'+
       '</div>'+
-      '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
-      '<thead><tr style="background:rgba(255,255,255,.02)">'+
-        '<th style="padding:7px 14px;text-align:left;font-size:10px;color:var(--mut)">Item</th>'+
-        '<th style="padding:7px 14px;text-align:center;font-size:10px;color:var(--mut);width:60px">SOH</th>'+
-        '<th style="padding:7px 14px;text-align:center;font-size:10px;color:#5dade2;background:rgba(41,128,185,.06)">Opening Count</th>'+
-      '</tr></thead>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">'+thead+
       '<tbody>'+subHtml+'</tbody></table></div>';
   });
 
-  var tplBanner='';
-  if(activeTemplate){
-    tplBanner='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:9px 14px;margin-bottom:10px;font-size:12px;color:#f39c12">'
-      +'<span>📋 <strong>'+TEMPLATES[activeTemplate].name+'</strong> template — standard items highlighted in gold. Enter quantities; add any other drinks as needed.</span>'
-      +'<button onclick="clearTemplate()" style="background:none;border:1px solid rgba(243,156,18,.4);border-radius:6px;color:#f39c12;font-size:11px;padding:4px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Clear</button>'
-      +'</div>';
-  }
   G('ctabs').innerHTML=tplBanner+'<div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:4px">'+jumpHtml+'</div>';
   G('cgrp').innerHTML=bodyHtml;
   updateCSummary();
