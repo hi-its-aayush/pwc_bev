@@ -221,13 +221,11 @@ function renderInv(){
     return '<tr style="border-bottom:1px solid var(--bdr);cursor:pointer" onclick="openEdit('+i.id+')" title="Click to edit SOH">'
       +'<td style="padding:10px 16px;font-weight:500;color:var(--acc)">'+i.name+vt+'</td>'
       +'<td style="padding:10px 16px;text-align:center;font-weight:700;font-size:15px;color:'+sc+'">'+fmtN(Math.max(0,s))+'</td>'
-      +'<td style="padding:10px 16px;text-align:center">'+sbadge(i)+'</td>'
       +'</tr>';
   }
   var thead='<thead><tr style="background:var(--sur2)">'
     +'<th style="padding:9px 16px;text-align:left;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase">Item</th>'
     +'<th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;width:80px">SOH</th>'
-    +'<th style="padding:9px 16px;text-align:center;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;width:100px">Status</th>'
     +'</tr></thead>';
   var html=''; var any=false;
   ILAYOUT.forEach(function(sec){
@@ -244,7 +242,7 @@ function renderInv(){
       any=true;
       if(grp.l){
         tbody+='<tr style="background:rgba(255,255,255,.015)">'
-          +'<td colspan="3" style="padding:7px 16px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--bdr)">— '+grp.l+' —</td>'
+          +'<td colspan="2" style="padding:7px 16px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--bdr)">— '+grp.l+' —</td>'
           +'</tr>';
       }
       tbody+=gi.map(makeRow).join('');
@@ -1155,8 +1153,8 @@ function printInv(){
   LAYOUT.forEach(function(sec){
     var si=items.filter(function(i){if(sec.t&&i.price_tier!==sec.t)return false;return sec.c.includes(i.category);});
     if(!si.length)return;
-    html+='<div class="sh">'+sec.l+(sec.t?' — '+sec.t:'')+'</div><table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>Opening</th><th>Ordered</th><th>Consumed</th><th>SOH</th><th>Status</th></tr></thead><tbody>';
-    si.forEach(function(i){var s=Math.max(0,soh(i)),cl=s<=0?'ou':s<=3?'lo':'ok';html+='<tr><td>'+i.name+'</td><td>'+(i.vintage||'')+'</td><td>'+(i._sup||'')+'</td><td>'+fmtNraw(i.opening_soh||0)+'</td><td>'+fmtNraw(i.orders_in||0)+'</td><td>'+fmtNraw(i.consumed||0)+'</td><td><strong>'+fmtNraw(s)+'</strong></td><td class="'+cl+'">'+(s<=0?'OUT':s<=3?'LOW':'OK')+'</td></tr>';});
+    html+='<div class="sh">'+sec.l+(sec.t?' — '+sec.t:'')+'</div><table><thead><tr><th>Item</th><th>Vintage</th><th>Supplier</th><th>SOH</th></tr></thead><tbody>';
+    si.forEach(function(i){var s=Math.max(0,soh(i));html+='<tr><td>'+i.name+'</td><td>'+(i.vintage||'')+'</td><td>'+(i._sup||'')+'</td><td><strong>'+fmtNraw(s)+'</strong></td></tr>';});
     html+='</tbody></table>';
   });
   pw('Inventory — '+new Date().toLocaleDateString('en-AU'),html);
@@ -1175,7 +1173,7 @@ async function printOrd(id){
 }
 
 async function printCon(id){
-  var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary))').eq('id',id).single();
+  var r=await sb.from('events').select('*,event_lines(*,items(name,category,is_complimentary,luc))').eq('id',id).single();
   if(r.error){toast('Not found',true);return;}
   var e=r.data;
   var isClosed=e.status==='closed';
@@ -1190,14 +1188,11 @@ async function printCon(id){
     grouped[cat].push(l);
   });
 
-  var css='*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:16px 24px}.title{text-align:center;font-size:16px;font-weight:700;margin-bottom:4px}.subtitle{text-align:center;font-size:11px;color:#666;margin-bottom:14px}.info{width:100%;border-collapse:collapse;margin-bottom:16px}.info td{border:1px solid #aaa;padding:6px 10px}.info .lbl{width:110px;font-weight:600;background:#f0f0f0}.items{width:100%;border-collapse:collapse;font-size:12px}.items th{border:1px solid #aaa;padding:7px 10px;background:#1a1d2e;color:#fff;font-weight:700;text-align:center;font-size:11px;text-transform:uppercase}.items th.left{text-align:left}.items td{border:1px solid #ccc;padding:7px 10px}.items .cat{background:#e8e8e8;font-weight:700;font-size:11px;text-transform:uppercase;padding:5px 10px;border:1px solid #ccc}.items .num{text-align:center;font-weight:700}.op{color:#1a5276}.cl{color:#7d6608}.con{color:#c0392b}.comp{color:#2980b9;font-style:italic;font-size:10px}@media print{body{margin:8px 14px}}';
+  var css='*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:16px 24px}.title{text-align:center;font-size:16px;font-weight:700;margin-bottom:4px}.subtitle{text-align:center;font-size:11px;color:#666;margin-bottom:14px}.info{width:100%;border-collapse:collapse;margin-bottom:16px}.info td{border:1px solid #aaa;padding:6px 10px}.info .lbl{width:110px;font-weight:600;background:#f0f0f0}.items{width:100%;border-collapse:collapse;font-size:12px}.items th{border:1px solid #aaa;padding:7px 8px;background:#1a1d2e;color:#fff;font-weight:700;text-align:center;font-size:10px;text-transform:uppercase}.items th.left{text-align:left}.items td{border:1px solid #ccc;padding:6px 8px}.items .cat{background:#e8e8e8;font-weight:700;font-size:11px;text-transform:uppercase;padding:5px 10px;border:1px solid #ccc}.items .num{text-align:center;font-weight:700}.items .money{text-align:right;font-family:Consolas,monospace}.tot td{background:#f0f0f0;font-weight:800;font-size:12px;border-top:2px solid #1a1d2e}.op{color:#1a5276}.cl{color:#7d6608}.con{color:#c0392b}.val{color:#1e6b40}.comp{color:#2980b9;font-style:italic;font-size:10px}@media print{body{margin:8px 14px}.items .cat,.tot td{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
 
-  var totalOpen=0,totalClose=0,totalCon=0;
-  (e.event_lines||[]).forEach(function(l){
-    totalOpen+=parseFloat(l.opening_qty||l.quantity||0);
-    totalClose+=parseFloat(l.closing_qty||0);
-    totalCon+=parseFloat(l.consumed_qty||l.quantity||0);
-  });
+  function money(n){ return '$'+(Number(n)||0).toFixed(2); }
+
+  var grandVal=0;
 
   var html='<div class="title">Beverage Consumption Sheet</div>'
     +'<div class="subtitle">'+(isClosed?'Final Report':'Opening Count Only — Awaiting Closing')+'</div>'
@@ -1208,9 +1203,12 @@ async function printCon(id){
     +'<tr><td class="lbl">Room</td><td>'+(e.room||'')+'</td><td class="lbl">Supervisor</td><td>'+(e.supervisor||'')+'</td></tr>'
     +'</table>'
     +'<table class="items"><thead><tr>'
-    +'<th class="left" style="width:38%">Product</th>'
-    +'<th class="op" style="width:16%">Opening</th>'
-    +(isClosed?'<th class="cl" style="width:16%">Closing</th><th class="con" style="width:16%">Consumed</th>':'<th style="width:16%">Closing</th><th style="width:16%">Consumed</th>')
+    +'<th class="left" style="width:34%">Product</th>'
+    +'<th style="width:10%">Opening</th>'
+    +'<th style="width:10%">Closing</th>'
+    +'<th style="width:11%">Consumed</th>'
+    +'<th style="width:12%">Unit Price</th>'
+    +'<th style="width:13%">Value</th>'
     +'</tr></thead><tbody>';
 
   var printed={};
@@ -1220,27 +1218,40 @@ async function printCon(id){
     var label=CAT_LABEL[cat]||cat;
     if(!printed[label]){
       printed[label]=true;
-      var colspan=4;
-      html+='<tr><td colspan="'+colspan+'" class="cat">'+label+'</td></tr>';
+      html+='<tr><td colspan="6" class="cat">'+label+'</td></tr>';
     }
     lines.forEach(function(l){
       var op=fmtNraw(parseFloat(l.opening_qty||l.quantity||0));
-      var cl=l.closing_qty!=null?Math.round(parseFloat(l.closing_qty)):'';
-      var con=l.consumed_qty!=null?fmtNraw(parseFloat(l.consumed_qty)):(isClosed?op:'');
+      var cl=l.closing_qty!=null?fmtNraw(parseFloat(l.closing_qty)):'';
+      var conNum=l.consumed_qty!=null?parseFloat(l.consumed_qty):(isClosed?parseFloat(l.opening_qty||l.quantity||0):null);
+      var con=conNum!=null?fmtNraw(conNum):'';
       var ic=l.items&&l.items.is_complimentary;
+      var luc=l.items&&l.items.luc!=null?parseFloat(l.items.luc):0;
+      var lineVal=conNum!=null?conNum*luc:null;
+      if(lineVal!=null) grandVal+=lineVal;
+      
       html+='<tr>'
         +'<td>'+(l.items?l.items.name:'—')+(ic?' <span class="comp">(Comp)</span>':'')+'</td>'
         +'<td class="num op">'+(op>0?op:'')+'</td>'
         +'<td class="num cl">'+(cl!==''?cl:'')+'</td>'
         +'<td class="num con">'+(con!==''?con:'')+'</td>'
+        +'<td class="money">'+(luc>0?money(luc):'—')+'</td>'
+        +'<td class="money val">'+(lineVal!=null?money(lineVal):'')+'</td>'
         +'</tr>';
     });
   });
 
-  html+='</tbody></table>';
+  if(isClosed){
+    html+='<tr class="tot">'
+      +'<td colspan="5" style="text-align:right">TOTAL</td>'
+      +'<td class="money">'+money(grandVal)+'</td>'
+      +'</tr>';
+  }
+
+  html+='</tbody></table>'
     +(isClosed?'':'<p style="margin-top:16px;font-size:11px;color:#999;text-align:center">Closing counts not yet recorded. Print after closing the event for the full report.</p>');
 
-  var w=window.open('','_blank','width=860,height=900');
+  var w=window.open('','_blank','width=980,height=900');
   w.document.open();
   w.document.write('<!DOCTYPE html><html><head><title>Consumption Sheet — '+e.event_name+'</title><style>'+css+'</style></head><body>'+html+'</body></html>');
   w.document.close();
@@ -1539,7 +1550,6 @@ function renderYearTracker(){
   var thead='<thead><tr>'
     +'<th style="padding:8px 14px;text-align:left;font-size:10px;color:var(--mut);text-transform:uppercase;position:sticky;left:0;background:var(--sur2);z-index:2;min-width:240px">Item</th>'
     +monthHdr
-    +'<th style="padding:8px 10px;text-align:center;font-size:10px;color:#f39c12;background:var(--sur2);min-width:70px">Change</th>'
     +'</tr></thead>';
 
   var html='';
@@ -1554,27 +1564,15 @@ function renderYearTracker(){
       });
       if(!gi.length) return;
       gi.sort(function(a,b){return a.name.localeCompare(b.name);});
-      if(grp.l) body+='<tr><td colspan="'+(d.months.length+2)+'" style="background:var(--sur2);padding:5px 14px;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;position:sticky;left:0">'+grp.l+'</td></tr>';
+      if(grp.l) body+='<tr><td colspan="'+(d.months.length+1)+'" style="background:var(--sur2);padding:5px 14px;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;position:sticky;left:0">'+grp.l+'</td></tr>';
       gi.forEach(function(i){
-        var cells='',prev=null,first=null,last=null;
+        var cells='';
         d.months.forEach(function(m){
           var v=i.months[m];
           var has=v!==undefined;
-          if(has){ if(first===null) first=v; last=v; }
-          var col='var(--mut)';
-          if(has){
-            if(prev!==null && v>prev) col='#27ae60';
-            else if(prev!==null && v<prev) col='#e94560';
-            else col='var(--txt)';
-          }
-          cells+='<td style="padding:8px 10px;text-align:center;font-weight:600;color:'+col+'">'+(has?fmtN(v):'·')+'</td>';
-          if(has) prev=v;
+          cells+='<td style="padding:8px 10px;text-align:center;font-weight:600;color:'+(has?'var(--txt)':'var(--mut)')+'">'+(has?fmtN(v):'·')+'</td>';
         });
-        var delta=(first!==null&&last!==null)?last-first:0;
-        var dcol=delta>0?'#27ae60':delta<0?'#e94560':'var(--mut)';
-        var dtxt=delta>0?'+'+fmtN(delta):(delta<0?'−'+fmtN(Math.abs(delta)):'—');
         var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
-        cells+='<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+dcol+'">'+dtxt+'</td>';
         body+='<tr style="border-bottom:1px solid var(--bdr)">'
           +'<td style="padding:8px 14px;font-weight:500;position:sticky;left:0;background:var(--sur);z-index:1">'+i.name+vt+'</td>'
           +cells+'</tr>';
@@ -1588,8 +1586,7 @@ function renderYearTracker(){
   });
 
   var note='<div style="background:rgba(41,128,185,.08);border:1px solid rgba(41,128,185,.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#5dade2">'
-    +'📅 Showing closing SOH for each month of '+d.year+'. Columns appear as you generate monthly reports. '
-    +'<span style="color:#27ae60">Green</span> = stock up on previous month, <span style="color:#e94560">red</span> = down. “·” means no report that month.</div>';
+    +'📅 Showing closing SOH for each month of '+d.year+'. Columns appear as you generate monthly reports. “·” means no report that month.</div>';
 
   G('ytwrap').innerHTML=note+(html||'<div class="empty">No item data in these reports.</div>');
 }
@@ -1605,7 +1602,7 @@ function exportYearXL(){
   rows.push(['PwC Sydney Beverage Portal — '+d.year+' Stock Tracker']);
   rows.push(['Closing SOH by month']);
   rows.push([]);
-  rows.push(['Item','Vintage','Category','Tier'].concat(d.months.map(function(m){return MONTH_LBL[m];})).concat(['Change']));
+  rows.push(['Item','Vintage','Category','Tier'].concat(d.months.map(function(m){return MONTH_LBL[m];})));
 
   var TIERS=['Luxe $65+','Client $30-65','Staff <$30','Non-Alc','Complimentary','Beer/Spirits'];
   TIERS.forEach(function(t){
@@ -1615,14 +1612,12 @@ function exportYearXL(){
     rows.push([]);
     rows.push(['=== '+t+' ===']);
     gi.forEach(function(i){
-      var vals=[],first=null,last=null;
+      var vals=[];
       d.months.forEach(function(m){
         var v=i.months[m];
-        if(v!==undefined){ if(first===null) first=v; last=v; vals.push(v); }
-        else vals.push('');
+        vals.push(v!==undefined?v:'');
       });
-      var delta=(first!==null&&last!==null)?last-first:'';
-      rows.push([i.name,i.vintage||'',i.category||'',i.price_tier||''].concat(vals).concat([delta]));
+      rows.push([i.name,i.vintage||'',i.category||'',i.price_tier||''].concat(vals));
     });
   });
 
@@ -1630,7 +1625,6 @@ function exportYearXL(){
   var ws=XLSX.utils.aoa_to_sheet(rows);
   var cols=[{wch:44},{wch:10},{wch:16},{wch:14}];
   d.months.forEach(function(){cols.push({wch:8});});
-  cols.push({wch:9});
   ws['!cols']=cols;
   XLSX.utils.book_append_sheet(wb,ws,String(d.year));
   XLSX.writeFile(wb,'PwC_Tracker_'+d.year+'.xlsx');
