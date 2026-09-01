@@ -197,7 +197,23 @@
         <button class="btn bs bsm" onclick="exportInvXL()">📊 Export Excel</button>
       </div>
     </div>
-    <div class="card"><div class="ch"><h4>Saved Reports</h4></div><div id="rlist"><div class="ld"><div class="sp"></div></div></div></div>
+    <div class="tabs" style="margin-bottom:16px">
+      <button class="tb on" id="rtab_list" onclick="switchRepTab('list')">📄 Saved Reports</button>
+      <button class="tb" id="rtab_year" onclick="switchRepTab('year')">📅 Year Tracker</button>
+    </div>
+    <div id="rview_list">
+      <div class="card"><div class="ch"><h4>Saved Reports</h4></div><div id="rlist"><div class="ld"><div class="sp"></div></div></div></div>
+    </div>
+    <div id="rview_year" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Year</label>
+          <select id="yrsel" onchange="renderYearTracker()" style="background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);border-radius:7px;padding:7px 12px;font-size:13px;font-family:inherit"></select>
+        </div>
+        <button class="btn bs bsm" onclick="exportYearXL()">📊 Export Year to Excel</button>
+      </div>
+      <div id="ytwrap"></div>
+    </div>
   </section>
 
   <!-- SETTINGS -->

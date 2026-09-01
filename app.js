@@ -1447,6 +1447,196 @@ async function saveOrdEdit(){
   finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Changes';}}
 }
 
+// ── YEAR TRACKER (month-by-month grid, Excel style) ───────────
+var YEAR_CACHE=null;
+
+function switchRepTab(which){
+  var isYear=which==='year';
+  G('rview_list').style.display=isYear?'none':'block';
+  G('rview_year').style.display=isYear?'block':'none';
+  G('rtab_list').className='tb'+(isYear?'':' on');
+  G('rtab_year').className='tb'+(isYear?' on':'');
+  if(isYear) loadYearTracker();
+}
+
+async function loadYearTracker(){
+  G('ytwrap').innerHTML='<div class="ld"><div class="sp"></div>Loading tracker…</div>';
+  var r=await sb.from('monthly_reports').select('*').order('generated_at',{ascending:true});
+  if(r.error){G('ytwrap').innerHTML='<div class="empty">Error loading reports.</div>';return;}
+  YEAR_CACHE=r.data||[];
+  if(!YEAR_CACHE.length){G('ytwrap').innerHTML='<div class="empty">No reports yet. Generate a report each month to build the tracker.</div>';return;}
+
+  // Build year list from generated_at
+  var years={};
+  YEAR_CACHE.forEach(function(rep){ years[new Date(rep.generated_at).getFullYear()]=true; });
+  var yl=Object.keys(years).sort().reverse();
+  var sel=G('yrsel');
+  sel.innerHTML=yl.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+  renderYearTracker();
+}
+
+// Pick ONE report per month: the latest generated in that month
+function monthlySnapshots(year){
+  var byMonth={};
+  YEAR_CACHE.forEach(function(rep){
+    var d=new Date(rep.generated_at);
+    if(d.getFullYear()!==parseInt(year)) return;
+    var m=d.getMonth(); // 0-11
+    if(!byMonth[m] || new Date(rep.generated_at)>new Date(byMonth[m].generated_at)) byMonth[m]=rep;
+  });
+  return byMonth;
+}
+
+var MONTH_LBL=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function yearTrackerData(){
+  var year=G('yrsel').value;
+  var byMonth=monthlySnapshots(year);
+  var monthsPresent=Object.keys(byMonth).map(Number).sort(function(a,b){return a-b;});
+
+  // Union of all items across the year's snapshots, keyed by name
+  var itemMap={};
+  monthsPresent.forEach(function(m){
+    var si=(byMonth[m].snapshot||{}).items||[];
+    si.forEach(function(i){
+      var key=i.name;
+      if(!itemMap[key]) itemMap[key]={name:i.name,vintage:i.vintage,category:i.category,price_tier:i.price_tier,supplier:i.supplier,months:{}};
+      itemMap[key].months[m]=Number(i.current_soh)||0;
+    });
+  });
+  return {year:year,months:monthsPresent,items:itemMap,byMonth:byMonth};
+}
+
+function renderYearTracker(){
+  if(!YEAR_CACHE||!YEAR_CACHE.length) return;
+  var d=yearTrackerData();
+  if(!d.months.length){G('ytwrap').innerHTML='<div class="empty">No reports for '+d.year+'.</div>';return;}
+
+  var LAYOUT=[
+    {s:'LUXE',col:'#9a7a1f',t:'Luxe $65+',groups:[
+      {l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Red Wine',c:['Red']}]},
+    {s:'CLIENT',col:'#1a5276',t:'Client $30-65',groups:[
+      {l:'Champagne & Sparkling',c:['Champagne','Sparkling']},{l:'White Wine',c:['White']},{l:'Rose',c:['Rose']},{l:'Red Wine',c:['Red']}]},
+    {s:'STAFF',col:'#1e6b40',t:'Staff <$30',groups:[
+      {l:'Sparkling',c:['Sparkling']},{l:'White Wine',c:['White']},{l:'Rose',c:['Rose']},{l:'Red Wine',c:['Red']},{l:'Dessert Wine',c:['Dessert Wine']}]},
+    {s:'NON-ALCOHOLIC',col:'#6c3483',t:'Non-Alc',groups:[
+      {l:'Non-Alc Wine',c:['Non-Alc Wine']},{l:'Non-Alc Cocktails',c:['Non-Alc Cocktail']}]},
+    {s:'BEER',col:'#935116',t:null,groups:[{l:null,c:['Beer']}]},
+    {s:'SOFT DRINKS & WATER',col:'#154360',t:null,groups:[
+      {l:'1.25L Bottles',c:['Soft Drink'],f:function(i){return i.name.toLowerCase().includes('1.25');}},
+      {l:'330ml Cans',c:['Soft Drink'],f:function(i){return !i.name.toLowerCase().includes('1.25');}},
+      {l:'Water',c:['Water']}]},
+    {s:'JUICES',col:'#1d6a35',t:null,groups:[{l:null,c:['Juice']}]},
+    {s:'SPIRITS & MIXERS',col:'#7b241c',t:null,groups:[{l:'Spirits',c:['Spirit']},{l:'Mixers',c:['Mixer']}]}
+  ];
+
+  var all=Object.keys(d.items).map(function(k){return d.items[k];});
+
+  var monthHdr=d.months.map(function(m){
+    return '<th style="padding:8px 10px;text-align:center;font-size:10px;color:var(--wht);background:var(--sur2);min-width:64px;white-space:nowrap">'+MONTH_LBL[m]+'</th>';
+  }).join('');
+
+  var thead='<thead><tr>'
+    +'<th style="padding:8px 14px;text-align:left;font-size:10px;color:var(--mut);text-transform:uppercase;position:sticky;left:0;background:var(--sur2);z-index:2;min-width:240px">Item</th>'
+    +monthHdr
+    +'<th style="padding:8px 10px;text-align:center;font-size:10px;color:#f39c12;background:var(--sur2);min-width:70px">Change</th>'
+    +'</tr></thead>';
+
+  var html='';
+  LAYOUT.forEach(function(sec){
+    var body='';
+    sec.groups.forEach(function(grp){
+      var gi=all.filter(function(i){
+        if(sec.t && i.price_tier!==sec.t) return false;
+        if(!grp.c.includes(i.category)) return false;
+        if(grp.f && !grp.f(i)) return false;
+        return true;
+      });
+      if(!gi.length) return;
+      gi.sort(function(a,b){return a.name.localeCompare(b.name);});
+      if(grp.l) body+='<tr><td colspan="'+(d.months.length+2)+'" style="background:var(--sur2);padding:5px 14px;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;position:sticky;left:0">'+grp.l+'</td></tr>';
+      gi.forEach(function(i){
+        var cells='',prev=null,first=null,last=null;
+        d.months.forEach(function(m){
+          var v=i.months[m];
+          var has=v!==undefined;
+          if(has){ if(first===null) first=v; last=v; }
+          var col='var(--mut)';
+          if(has){
+            if(prev!==null && v>prev) col='#27ae60';
+            else if(prev!==null && v<prev) col='#e94560';
+            else col='var(--txt)';
+          }
+          cells+='<td style="padding:8px 10px;text-align:center;font-weight:600;color:'+col+'">'+(has?fmtN(v):'·')+'</td>';
+          if(has) prev=v;
+        });
+        var delta=(first!==null&&last!==null)?last-first:0;
+        var dcol=delta>0?'#27ae60':delta<0?'#e94560':'var(--mut)';
+        var dtxt=delta>0?'+'+fmtN(delta):(delta<0?'−'+fmtN(Math.abs(delta)):'—');
+        var vt=i.vintage?' <span style="color:var(--mut);font-size:11px">'+i.vintage+'</span>':'';
+        cells+='<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+dcol+'">'+dtxt+'</td>';
+        body+='<tr style="border-bottom:1px solid var(--bdr)">'
+          +'<td style="padding:8px 14px;font-weight:500;position:sticky;left:0;background:var(--sur);z-index:1">'+i.name+vt+'</td>'
+          +cells+'</tr>';
+      });
+    });
+    if(!body) return;
+    html+='<div style="margin-bottom:18px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr)">'
+      +'<div style="background:'+sec.col+';padding:8px 16px;font-weight:800;font-size:12px;color:#fff;letter-spacing:1px;text-transform:uppercase">'+sec.s+(sec.t?' <span style="font-weight:400;opacity:.8;font-size:10px">'+sec.t+'</span>':'')+'</div>'
+      +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+thead+'<tbody>'+body+'</tbody></table></div>'
+      +'</div>';
+  });
+
+  var note='<div style="background:rgba(41,128,185,.08);border:1px solid rgba(41,128,185,.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#5dade2">'
+    +'📅 Showing closing SOH for each month of '+d.year+'. Columns appear as you generate monthly reports. '
+    +'<span style="color:#27ae60">Green</span> = stock up on previous month, <span style="color:#e94560">red</span> = down. “·” means no report that month.</div>';
+
+  G('ytwrap').innerHTML=note+(html||'<div class="empty">No item data in these reports.</div>');
+}
+
+function exportYearXL(){
+  if(typeof XLSX==='undefined'){toast('Excel loading, try again',true);return;}
+  if(!YEAR_CACHE||!YEAR_CACHE.length){toast('No data to export',true);return;}
+  var d=yearTrackerData();
+  if(!d.months.length){toast('No reports for that year',true);return;}
+
+  var all=Object.keys(d.items).map(function(k){return d.items[k];});
+  var rows=[];
+  rows.push(['PwC Sydney Beverage Portal — '+d.year+' Stock Tracker']);
+  rows.push(['Closing SOH by month']);
+  rows.push([]);
+  rows.push(['Item','Vintage','Category','Tier'].concat(d.months.map(function(m){return MONTH_LBL[m];})).concat(['Change']));
+
+  var TIERS=['Luxe $65+','Client $30-65','Staff <$30','Non-Alc','Complimentary','Beer/Spirits'];
+  TIERS.forEach(function(t){
+    var gi=all.filter(function(i){return i.price_tier===t;});
+    if(!gi.length) return;
+    gi.sort(function(a,b){return (a.category||'').localeCompare(b.category||'')||a.name.localeCompare(b.name);});
+    rows.push([]);
+    rows.push(['=== '+t+' ===']);
+    gi.forEach(function(i){
+      var vals=[],first=null,last=null;
+      d.months.forEach(function(m){
+        var v=i.months[m];
+        if(v!==undefined){ if(first===null) first=v; last=v; vals.push(v); }
+        else vals.push('');
+      });
+      var delta=(first!==null&&last!==null)?last-first:'';
+      rows.push([i.name,i.vintage||'',i.category||'',i.price_tier||''].concat(vals).concat([delta]));
+    });
+  });
+
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  var cols=[{wch:44},{wch:10},{wch:16},{wch:14}];
+  d.months.forEach(function(){cols.push({wch:8});});
+  cols.push({wch:9});
+  ws['!cols']=cols;
+  XLSX.utils.book_append_sheet(wb,ws,String(d.year));
+  XLSX.writeFile(wb,'PwC_Tracker_'+d.year+'.xlsx');
+  toast('Year tracker exported');
+}
+
 // ── MANAGE ITEMS ──────────────────────────────────────────────
 function openManageItems(){showManageList();openMo('mmanage');}
 
